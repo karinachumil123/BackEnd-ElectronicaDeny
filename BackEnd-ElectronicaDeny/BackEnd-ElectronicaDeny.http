@@ -1,0 +1,6 @@
+@BackEnd_ElectronicaDeny_HostAddress = http://localhost:5112
+
+GET {{BackEnd_ElectronicaDeny_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
