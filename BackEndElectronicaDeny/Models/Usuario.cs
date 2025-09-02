@@ -13,8 +13,8 @@ namespace BackEnd_ElectronicaDeny.Models
         public string Correo { get; set; }
         public string Telefono { get; set; }
         public string Contrasena { get; set; }
-        //public DateTime FechaNacimiento { get; set; }
-        //public int edad { get; set; }
+        public DateTime? FechaNacimiento { get; set; }
+        public int edad { get; set; }
         public string? Imagen { get; set; }
         public DateTime? FechaCreacion { get; set; }
         public DateTime? UltimoInicioSesion { get; set; }

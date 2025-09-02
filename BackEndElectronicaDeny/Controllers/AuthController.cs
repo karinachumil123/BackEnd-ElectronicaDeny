@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using BackEnd_ElectronicaDeny.DTOs;
 using BackEnd_ElectronicaDeny.Services;
-
+using BackEndElectronicaDeny.DTOs;
 
 namespace BackEnd_ElectronicaDeny.Controllers
 {
@@ -74,7 +74,12 @@ namespace BackEnd_ElectronicaDeny.Controllers
                     _logger.LogError("Rol no encontrado para el usuario: {Email}", login.Email);
                     return StatusCode(500, "Error en la configuración del usuario");
                 }
-               
+
+                // Obtener permisos del rol
+                var permisos = await _context.RolPermisos
+                    .Where(rp => rp.RolId == usuario.RolId)
+                    .Select(rp => rp.Permiso.Nombre)
+                    .ToListAsync();
 
                 var claims = new List<Claim>
                 {
@@ -84,9 +89,14 @@ namespace BackEnd_ElectronicaDeny.Controllers
                     new Claim("Email", usuario.Correo),
                 };
 
-               
+                var secretKey = _configuration["Jwt:SecretKey"];
+                if (string.IsNullOrEmpty(secretKey))
+                {
+                    _logger.LogError("La clave JWT no está configurada");
+                    return StatusCode(500, "Error de configuración JWT");
+                }
+                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
 
-                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:SecretKey"]));
                 var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
                 var token = new JwtSecurityToken(
                     issuer: _configuration["Jwt:Issuer"],
@@ -110,15 +120,22 @@ namespace BackEnd_ElectronicaDeny.Controllers
                     userApellido = usuario.Apellido,
                     userEmail = usuario.Correo,
                     userRole = rol.Nombre,
-                   
-                    userImage = usuario.Imagen
+                    userImage = usuario.Imagen,
+                    userPermissions = permisos
                 });
+
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error durante el inicio de sesión para {Email}", login.Email);
-                return StatusCode(500, "Error interno del servidor");
+                return StatusCode(500, new
+                {
+                    message = "Error interno del servidor",
+                    error = ex.Message,
+                    stackTrace = ex.StackTrace
+                });
             }
+
 
         }
         [HttpPost("recuperar-contrasena")]
@@ -138,7 +155,23 @@ namespace BackEnd_ElectronicaDeny.Controllers
             return Ok(new { mensaje = "Código de recuperación enviado exitosamente" });
         }
 
-       
+        [HttpPost("verificar-codigo-recuperacion")]
+        public async Task<IActionResult> VerificarCodigoRecuperacion([FromBody] VerificarCodigoRequest request)
+        {
+            if (string.IsNullOrEmpty(request.Correo) || string.IsNullOrEmpty(request.Codigo))
+            {
+                return BadRequest(new { message = "El correo y el código son obligatorios" });
+            }
+
+            var resultado = await _authService.VerificarCodigoRecuperacionAsync(request.Correo, request.Codigo);
+
+            if (!resultado)
+            {
+                return BadRequest(new { message = "Código incorrecto o expirado" });
+            }
+
+            return Ok(new { message = "Código verificado correctamente" });
+        }
 
 
         [HttpPost("reset-password")]
@@ -158,4 +191,5 @@ namespace BackEnd_ElectronicaDeny.Controllers
         public string Email { get; set; }
         public string Password { get; set; }
     }
+
 }

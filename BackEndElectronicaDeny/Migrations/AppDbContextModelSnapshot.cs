@@ -360,6 +360,29 @@ namespace BackEnd_ElectronicaDeny.Migrations
                         });
                 });
 
+            modelBuilder.Entity("BackEnd_ElectronicaDeny.Models.RolPermiso", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("PermisoId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RolId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PermisoId");
+
+                    b.HasIndex("RolId");
+
+                    b.ToTable("RolPermisos");
+                });
+
             modelBuilder.Entity("BackEnd_ElectronicaDeny.Models.RolUsuario", b =>
                 {
                     b.Property<int>("Id")
@@ -421,6 +444,9 @@ namespace BackEnd_ElectronicaDeny.Migrations
                     b.Property<DateTime?>("FechaExpiracionCodigo")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("FechaNacimiento")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Imagen")
                         .HasColumnType("text");
 
@@ -438,6 +464,9 @@ namespace BackEnd_ElectronicaDeny.Migrations
                     b.Property<DateTime?>("UltimoInicioSesion")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("edad")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("EstadoId");
@@ -450,13 +479,14 @@ namespace BackEnd_ElectronicaDeny.Migrations
                         new
                         {
                             Id = 1,
-                            Apellido = "Chumil",
+                            Apellido = "Xoquic",
                             Contrasena = "@Admin2025",
-                            Correo = "tiendakeytelin@gmail.com",
+                            Correo = "electronicadeny@gmail.com",
                             EstadoId = 1,
-                            Nombre = "Edwin",
+                            Nombre = "Deny",
                             RolId = 1,
-                            Telefono = "5881 6213"
+                            Telefono = "5881 6213",
+                            edad = 0
                         });
                 });
 
@@ -465,6 +495,25 @@ namespace BackEnd_ElectronicaDeny.Migrations
                     b.HasOne("BackEnd_ElectronicaDeny.Models.RolUsuario", null)
                         .WithMany("Permisos")
                         .HasForeignKey("RolUsuarioId");
+                });
+
+            modelBuilder.Entity("BackEnd_ElectronicaDeny.Models.RolPermiso", b =>
+                {
+                    b.HasOne("BackEnd_ElectronicaDeny.Models.Permiso", "Permiso")
+                        .WithMany()
+                        .HasForeignKey("PermisoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BackEnd_ElectronicaDeny.Models.RolUsuario", "Rol")
+                        .WithMany()
+                        .HasForeignKey("RolId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Permiso");
+
+                    b.Navigation("Rol");
                 });
 
             modelBuilder.Entity("BackEnd_ElectronicaDeny.Models.Usuario", b =>

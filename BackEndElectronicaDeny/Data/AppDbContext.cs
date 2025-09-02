@@ -11,6 +11,7 @@ namespace BackEnd_ElectronicaDeny.Data
         public DbSet<EstadoUsuario> Estados { get; set; }
         public DbSet<RolUsuario> Roles { get; set; }
         public DbSet<Permiso> Permisos { get; set; }
+        public DbSet<RolPermiso> RolPermisos { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -21,12 +22,11 @@ namespace BackEnd_ElectronicaDeny.Data
                 new EstadoUsuario { Id = 2, Nombre = "Inactivo" },
                 new EstadoUsuario { Id = 3, Nombre = "Eliminado" }
             );
-
            
 
             //Usuario Admin
             modelBuilder.Entity<Usuario>().HasData(
-                  new Usuario { Id = 1, Nombre = "Edwin", Apellido = "Chumil", Telefono = "5881 6213", Correo = "tiendakeytelin@gmail.com", Contrasena = "@Admin2025", EstadoId = 1, RolId = 1, }
+                  new Usuario { Id = 1, Nombre = "Deny", Apellido = "Xoquic", Telefono = "5881 6213", Correo = "electronicadeny@gmail.com", Contrasena = "@Admin2025", EstadoId = 1, RolId = 1, }
                  );
 
             // Insertar datos iniciales para Roles
@@ -34,8 +34,6 @@ namespace BackEnd_ElectronicaDeny.Data
                 new RolUsuario { Id = 1, Nombre = "Admin" },
                 new RolUsuario { Id = 2, Nombre = "Vendedor" }
             );
-
-       
 
             // Insertar datos iniciales para Permisos
             modelBuilder.Entity<Permiso>().HasData(
