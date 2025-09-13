@@ -18,14 +18,14 @@ namespace BackEndElectronicaDeny.Controllers
 
         // Obtener todos los estados de usuario
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<EstadoUsuario>>> GetEstados()
+        public async Task<ActionResult<IEnumerable<Estados>>> GetEstados()
         {
             return await _context.Estados.ToListAsync();
         }
 
         // Obtener un estado por ID
         [HttpGet("{id}")]
-        public async Task<ActionResult<EstadoUsuario>> GetEstado(int id)
+        public async Task<ActionResult<Estados>> GetEstado(int id)
         {
             var estado = await _context.Estados.FindAsync(id);
             if (estado == null) return NotFound();
@@ -34,7 +34,7 @@ namespace BackEndElectronicaDeny.Controllers
 
         // Crear un nuevo estado
         [HttpPost]
-        public async Task<ActionResult<EstadoUsuario>> PostEstado(EstadoUsuario estado)
+        public async Task<ActionResult<Estados>> PostEstado(Estados estado)
         {
             _context.Estados.Add(estado);
             await _context.SaveChangesAsync();
@@ -43,7 +43,7 @@ namespace BackEndElectronicaDeny.Controllers
 
         // Actualizar un estado
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutEstado(int id, EstadoUsuario estado)
+        public async Task<IActionResult> PutEstado(int id, Estados estado)
         {
             if (id != estado.Id) return BadRequest();
             _context.Entry(estado).State = EntityState.Modified;

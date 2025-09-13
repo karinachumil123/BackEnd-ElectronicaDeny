@@ -2,10 +2,10 @@
 
 #nullable disable
 
-namespace BackEnd_ElectronicaDeny.Migrations
+namespace BackEndElectronicaDeny.Migrations
 {
     /// <inheritdoc />
-    public partial class ActualizacionUsuarios : Migration
+    public partial class Datos : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

@@ -1,10 +1,11 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using BackEnd_ElectronicaDeny.Models;
+using System.ComponentModel.DataAnnotations;
 
-namespace BackEnd_ElectronicaDeny.Models
+namespace BackEndElectronicaDeny.Models
 {
-    public class EstadoUsuario
+    public class EstadoProductoFisico
     {
-        public EstadoUsuario()
+        public EstadoProductoFisico()
         {
             Usuarios = new HashSet<Usuario>();
         }
@@ -16,3 +17,4 @@ namespace BackEnd_ElectronicaDeny.Models
         public virtual ICollection<Usuario> Usuarios { get; set; }
     }
 }
+

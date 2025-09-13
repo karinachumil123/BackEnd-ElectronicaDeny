@@ -26,7 +26,7 @@ namespace BackEnd_ElectronicaDeny.Models
         // Propiedades de navegación
         [JsonIgnore]
         [ForeignKey("EstadoId")]
-        public virtual EstadoUsuario Estado { get; set; }
+        public virtual Estados Estado { get; set; }
 
         [JsonIgnore]
         [ForeignKey("RolId")]
