@@ -16,7 +16,8 @@ namespace BackEnd_ElectronicaDeny.Data
         public DbSet<Empresa> Empresa { get; set; }
         public DbSet<Proveedor> Proveedores { get; set; }
         public DbSet<Categoria> Categorias { get; set; }
-        public DbSet<Pedido> Pedido { get; set; }
+        public DbSet<Pedido> Pedidos { get; set; }
+        public DbSet<DetallePedido> DetallePedidos { get; set; }
         public DbSet<Productos> Productos { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -26,13 +27,6 @@ namespace BackEnd_ElectronicaDeny.Data
                 new Estados { Id = 1, Nombre = "Activo" },
                 new Estados { Id = 2, Nombre = "Inactivo" },
                 new Estados { Id = 3, Nombre = "Eliminado" }
-            );
-
-            // Insertar datos iniciales para EstadosProductos 
-            modelBuilder.Entity<EstadoProductoFisico>().HasData(
-                new EstadoProductoFisico { Id = 1, Nombre = "Disponible" },
-                new EstadoProductoFisico { Id = 2, Nombre = "Por agotarse / Stock bajo" },
-                new EstadoProductoFisico { Id = 3, Nombre = "Agotado" }
             );
 
             //Empresa
@@ -279,6 +273,29 @@ namespace BackEnd_ElectronicaDeny.Data
                 .WithMany(pr => pr.Productos)
                 .HasForeignKey(p => p.ProveedorId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Relación: Pedido 1 - * DetallePedido
+            modelBuilder.Entity<DetallePedido>()
+                .HasOne(d => d.Pedido)
+                .WithMany(p => p.Detalles)
+                .HasForeignKey(d => d.PedidoId)
+                .OnDelete(DeleteBehavior.Cascade); // al eliminar Pedido, se eliminan los Detalles
+
+            // Relación: DetallePedido - Producto (muchos a uno)
+            modelBuilder.Entity<DetallePedido>()
+                .HasOne(d => d.Producto)
+                .WithMany() // si tienes navegación inversa, cámbiala por .WithMany(p => p.Detalles)
+                .HasForeignKey(d => d.ProductoId)
+                .OnDelete(DeleteBehavior.Restrict); // no borrar Producto si hay detalles
+
+            // Relación: Pedido - Proveedor
+            modelBuilder.Entity<Pedido>()
+                .HasOne(p => p.Proveedor)
+                .WithMany() // si hay navegación inversa, cámbiala
+                .HasForeignKey(p => p.ProveedorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            
         }
     }
 }

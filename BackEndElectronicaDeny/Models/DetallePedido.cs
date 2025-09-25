@@ -9,7 +9,8 @@ namespace BackEndElectronicaDeny.Models
         public int Id { get; set; }
 
         [Required]
-        public int PedidoId { get; set; }
+        [ForeignKey(nameof(Pedido))]
+        public int PedidoId { get; set; }  // FK -> Pedido.Id
 
         [Required]
         public int ProductoId { get; set; }
@@ -20,11 +21,13 @@ namespace BackEndElectronicaDeny.Models
 
         [Required]
         [Range(0, 999999)]
+        [Column(TypeName = "decimal(18,2)")]
         public decimal PrecioUnitario { get; set; }
 
         [NotMapped]
         public decimal Subtotal => Cantidad * PrecioUnitario;
 
+        // Navegaciones
         [JsonIgnore]
         public virtual Pedido? Pedido { get; set; }
 

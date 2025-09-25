@@ -1,4 +1,4 @@
-﻿using BackEnd_ElectronicaDeny.Data;
+﻿using BackEnd_ElectronicaDeny.Data;         // Ajusta si tu AppDbContext está en otro namespace
 using BackEndElectronicaDeny.DTOs;
 using BackEndElectronicaDeny.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -19,142 +19,186 @@ namespace BackEndElectronicaDeny.Controllers
             _logger = logger;
         }
 
-        // Helper: Id del estado 'Eliminado'
-        private async Task<int> GetEstadoEliminadoIdAsync()
-        {
-            return await _context.Estados
-                .Where(e => e.Nombre == "Eliminado")
-                .Select(e => e.Id)
-                .FirstOrDefaultAsync();
-        }
+        private static string EstadoNombre(int estadoId) =>
+            estadoId == 1 ? "Activo" :
+            estadoId == 2 ? "Inactivo" : "Desconocido";
 
-        // GET: api/Productos
-        // Por defecto NO devuelve productos en 'Eliminado'.
-        // Para listados administrativos: api/Producto?incluirEliminados=true
+        private static bool EsActivo(int estadoId) => estadoId == 1;
+        private static bool EsInactivo(int estadoId) => estadoId == 2;
+
+        // =========================================
+        // GET: api/Producto
+        // Por defecto: SOLO activos (EstadoId == 1)
+        // Admin puede pedir inactivos con ?incluirInactivos=true
+        // Compat: ?incluirEliminados=true se trata igual que incluirInactivos
+        // =========================================
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<object>>> GetProductos([FromQuery] bool incluirEliminados = false)
+        public async Task<ActionResult<IEnumerable<object>>> GetProductos(
+            [FromQuery] bool? incluirInactivos = null,
+            [FromQuery] bool? incluirEliminados = null  // compat: frontend viejo
+        )
         {
             try
             {
                 _logger.LogInformation("Obteniendo lista de productos");
 
-                var idEliminado = await GetEstadoEliminadoIdAsync();
+                bool incluir = (incluirInactivos ?? false) || (incluirEliminados ?? false);
 
                 var q = _context.Productos
                     .Include(p => p.Categoria)
                     .Include(p => p.Proveedor)
-                    .Include(p => p.Estado)
                     .AsNoTracking();
 
-                if (!incluirEliminados && idEliminado != 0)
-                    q = q.Where(p => p.EstadoId != idEliminado);
+                if (!incluir)
+                {
+                    // Solo activos por defecto
+                    q = q.Where(p => p.EstadoId == 1);
+                }
 
                 var productos = await q.ToListAsync();
 
-                var productosResponse = productos.Select(p => new
+                var response = productos.Select(p => new
                 {
                     p.Id,
                     p.Nombre,
                     p.CodigoProducto,
-                    p.MarcaProducto,
+                    MarcaProducto = p.MarcaProducto,
                     p.PrecioAdquisicion,
                     p.PrecioVenta,
                     p.Descripcion,
                     p.Imagen,
-                    Estado = p.Estado.Nombre,
+                    Estado = EstadoNombre(p.EstadoId),
+                    p.EstadoId,
                     Categoria = p.Categoria != null ? p.Categoria.CategoriaNombre : null,
                     Proveedor = p.Proveedor != null ? p.Proveedor.Nombre : null,
+                    p.CategoriaId,
+                    p.ProveedorId
                 }).ToList();
 
-                return Ok(productosResponse);
+                return Ok(response);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error al listar productos: {ex.InnerException?.Message ?? ex.Message}");
-                return StatusCode(500, $"Error interno al listar productos: {ex.InnerException?.Message ?? ex.Message}");
+                _logger.LogError(ex, "Error al listar productos");
+                return StatusCode(500, "Error interno al listar productos");
             }
         }
 
-        // GET: api/Productos/5
-        [HttpGet("{id}")]
+        // ==========================================================
+        // GET: api/Producto/por-proveedor/{proveedorId}
+        // Solo productos ACTIVOS (EstadoId == 1) del proveedor dado
+        // Útil para el combo del modal al seleccionar proveedor
+        // ==========================================================
+        [HttpGet("por-proveedor/{proveedorId:int}")]
+        public async Task<ActionResult<IEnumerable<object>>> GetProductosActivosPorProveedor(int proveedorId)
+        {
+            try
+            {
+                var productos = await _context.Productos
+                    .Where(p => p.ProveedorId == proveedorId && p.EstadoId == 1) // solo activos
+                    .AsNoTracking()
+                    .Select(p => new
+                    {
+                        p.Id,
+                        p.Nombre,
+                        p.ProveedorId
+                    })
+                    .OrderBy(p => p.Nombre)
+                    .ToListAsync();
+
+                return Ok(productos);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al listar productos por proveedor {ProveedorId}", proveedorId);
+                return StatusCode(500, "Error interno al listar productos por proveedor");
+            }
+        }
+
+        // GET: api/Producto/5
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<object>> GetProducto(int id)
         {
             try
             {
-                _logger.LogInformation($"Buscando producto con ID: {id}");
-                var producto = await _context.Productos
-                    .Include(p => p.Categoria)
-                    .Include(p => p.Proveedor)
-                    .Include(p => p.Estado)
-                    .FirstOrDefaultAsync(p => p.Id == id);
+                _logger.LogInformation("Buscando producto {Id}", id);
 
-                if (producto == null)
-                {
-                    _logger.LogWarning($"Producto con ID {id} no encontrado");
-                    return NotFound($"No se encontró el producto con ID {id}");
-                }
+                var p = await _context.Productos
+                    .Include(x => x.Categoria)
+                    .Include(x => x.Proveedor)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Id == id);
 
-                var productoResponse = new
+                if (p == null) return NotFound($"No se encontró el producto con ID {id}");
+
+                var response = new
                 {
-                    producto.Id,
-                    producto.Nombre,
-                    producto.CodigoProducto,
-                    producto.MarcaProducto,
-                    producto.PrecioAdquisicion,
-                    producto.PrecioVenta,
-                    producto.Descripcion,
-                    Estado = producto.Estado.Nombre,
-                    producto.Imagen,
-                    Categoria = producto.Categoria != null ? producto.Categoria.CategoriaNombre : null,
-                    Proveedor = producto.Proveedor != null ? producto.Proveedor.Nombre : null,
+                    p.Id,
+                    p.Nombre,
+                    p.CodigoProducto,
+                    MarcaProducto = p.MarcaProducto,
+                    p.PrecioAdquisicion,
+                    p.PrecioVenta,
+                    p.Descripcion,
+                    p.Imagen,
+                    Estado = EstadoNombre(p.EstadoId),
+                    p.EstadoId,
+                    Categoria = p.Categoria?.CategoriaNombre,
+                    Proveedor = p.Proveedor?.Nombre,
+                    p.CategoriaId,
+                    p.ProveedorId
                 };
 
-                return Ok(productoResponse);
+                return Ok(response);
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error al obtener producto {id}: {ex.Message}");
+                _logger.LogError(ex, "Error al obtener producto {Id}", id);
                 return StatusCode(500, "Error interno al obtener el producto");
             }
         }
 
-        // POST: api/Productos
+        // POST: api/Producto
         [HttpPost]
-        public async Task<ActionResult<object>> PostProducto([FromBody] ProductoCreateDto productoDto)
+        public async Task<ActionResult<object>> PostProducto([FromBody] ProductoCreateDto dto)
         {
             try
             {
-                _logger.LogInformation($"Creando producto: {productoDto.Nombre}");
-
-                if (string.IsNullOrEmpty(productoDto.Nombre))
+                if (string.IsNullOrWhiteSpace(dto.Nombre))
                     return BadRequest("El nombre del producto es obligatorio.");
 
-                var idEliminado = await GetEstadoEliminadoIdAsync();
+                // Validaciones: categoría/proveedor deben estar Activos (1)
+                var categoriaActiva = await _context.Categorias
+                    .AnyAsync(c => c.Id == dto.CategoriaId && c.EstadoId == 1);
+                if (!categoriaActiva)
+                    return BadRequest("La categoría seleccionada no está activa y no puede usarse.");
 
-                // Validar que Categoría y Proveedor no estén 'Eliminado'
-                if (await _context.Categorias.AnyAsync(c => c.Id == productoDto.CategoriaId && c.EstadoId == idEliminado))
-                    return BadRequest("La categoría seleccionada está eliminada y no puede usarse.");
-                if (await _context.Proveedores.AnyAsync(p => p.Id == productoDto.ProveedorId && p.EstadoId == idEliminado))
-                    return BadRequest("El proveedor seleccionado está eliminado y no puede usarse.");
+                var proveedorActivo = await _context.Proveedores
+                    .AnyAsync(p => p.Id == dto.ProveedorId && p.EstadoId == 1);
+                if (!proveedorActivo)
+                    return BadRequest("El proveedor seleccionado no está activo y no puede usarse.");
+
+                // Normaliza EstadoId: default 1 (Activo)
+                var estadoId = (dto.EstadoId == 1 || dto.EstadoId == 2) ? dto.EstadoId : 1;
 
                 var producto = new Productos
                 {
-                    Nombre = productoDto.Nombre,
-                    CodigoProducto = productoDto.CodigoProducto,
-                    MarcaProducto = productoDto.MarcaProducto,
-                    PrecioAdquisicion = productoDto.PrecioAdquisicion,
-                    PrecioVenta = productoDto.PrecioVenta,
-                    Descripcion = productoDto.Descripcion,
-                    Imagen = productoDto.Imagen,
-                    EstadoId = productoDto.EstadoId,
-                    CategoriaId = productoDto.CategoriaId,
-                    ProveedorId = productoDto.ProveedorId,
+                    Nombre = dto.Nombre,
+                    CodigoProducto = dto.CodigoProducto,
+                    MarcaProducto = dto.MarcaProducto,
+                    PrecioAdquisicion = dto.PrecioAdquisicion,
+                    PrecioVenta = dto.PrecioVenta,
+                    Descripcion = dto.Descripcion,
+                    Imagen = dto.Imagen,
+                    EstadoId = estadoId,      // 1 Activo / 2 Inactivo
+                    CategoriaId = dto.CategoriaId,
+                    ProveedorId = dto.ProveedorId
                 };
 
                 _context.Productos.Add(producto);
                 await _context.SaveChangesAsync();
 
-                var productoResponse = new
+                var response = new
                 {
                     producto.Id,
                     producto.Nombre,
@@ -164,127 +208,106 @@ namespace BackEndElectronicaDeny.Controllers
                     producto.PrecioVenta,
                     producto.Descripcion,
                     producto.Imagen,
-                    producto.Estado,
+                    Estado = EstadoNombre(producto.EstadoId),
+                    producto.EstadoId,
                     producto.CategoriaId,
-                    producto.ProveedorId,
+                    producto.ProveedorId
                 };
 
-                return CreatedAtAction(nameof(GetProducto), new { id = producto.Id }, productoResponse);
+                return CreatedAtAction(nameof(GetProducto), new { id = producto.Id }, response);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error al crear producto: {ex.InnerException?.Message ?? ex.Message}");
-                return StatusCode(500, $"Error interno al crear el producto: {ex.InnerException?.Message ?? ex.Message}");
+                _logger.LogError(ex, "Error al crear producto");
+                return StatusCode(500, "Error interno al crear el producto");
             }
         }
 
-        // PUT: api/Productos/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutProducto(int id, [FromBody] ProductoUpdateDto productoDto)
+        // PUT: api/Producto/5
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> PutProducto(int id, [FromBody] ProductoUpdateDto dto)
         {
             try
             {
-                if (id != productoDto.Id)
-                {
-                    _logger.LogWarning($"ID no coincide en actualización: {id} vs {productoDto.Id}");
-                    return BadRequest("El ID no coincide con el producto a actualizar");
-                }
+                if (id != dto.Id) return BadRequest("El ID no coincide con el producto a actualizar.");
 
-                var productoExistente = await _context.Productos.FindAsync(id);
-                if (productoExistente == null)
-                {
-                    _logger.LogWarning($"Producto no encontrado para actualización: {id}");
-                    return NotFound($"No se encontró el producto con ID {id}");
-                }
+                var p = await _context.Productos.FindAsync(id);
+                if (p == null) return NotFound($"No se encontró el producto con ID {id}");
 
-                var idEliminado = await GetEstadoEliminadoIdAsync();
+                // Validaciones: categoría/proveedor deben estar Activos (1)
+                var categoriaActiva = await _context.Categorias
+                    .AnyAsync(c => c.Id == dto.CategoriaId && c.EstadoId == 1);
+                if (!categoriaActiva)
+                    return BadRequest("La categoría seleccionada no está activa y no puede usarse.");
 
-                // Validar que Categoría y Proveedor no estén 'Eliminado'
-                if (await _context.Categorias.AnyAsync(c => c.Id == productoDto.CategoriaId && c.EstadoId == idEliminado))
-                    return BadRequest("La categoría seleccionada está eliminada y no puede usarse.");
-                if (await _context.Proveedores.AnyAsync(p => p.Id == productoDto.ProveedorId && p.EstadoId == idEliminado))
-                    return BadRequest("El proveedor seleccionado está eliminado y no puede usarse.");
+                var proveedorActivo = await _context.Proveedores
+                    .AnyAsync(pr => pr.Id == dto.ProveedorId && pr.EstadoId == 1);
+                if (!proveedorActivo)
+                    return BadRequest("El proveedor seleccionado no está activo y no puede usarse.");
 
-                // Actualizar campos
-                productoExistente.Nombre = productoDto.Nombre;
-                productoExistente.CodigoProducto = productoDto.CodigoProducto;
-                productoExistente.MarcaProducto = productoDto.MarcaProducto;
-                productoExistente.PrecioAdquisicion = productoDto.PrecioAdquisicion;
-                productoExistente.PrecioVenta = productoDto.PrecioVenta;
-                productoExistente.Descripcion = productoDto.Descripcion;
-                productoExistente.EstadoId = productoDto.EstadoId;
-                productoExistente.Imagen = productoDto.Imagen;
-                productoExistente.CategoriaId = productoDto.CategoriaId;
-                productoExistente.ProveedorId = productoDto.ProveedorId;
+                // Normaliza EstadoId: solo 1 o 2
+                var estadoId = (dto.EstadoId == 1 || dto.EstadoId == 2) ? dto.EstadoId : p.EstadoId;
+
+                p.Nombre = dto.Nombre;
+                p.CodigoProducto = dto.CodigoProducto;
+                p.MarcaProducto = dto.MarcaProducto;
+                p.PrecioAdquisicion = dto.PrecioAdquisicion;
+                p.PrecioVenta = dto.PrecioVenta;
+                p.Descripcion = dto.Descripcion;
+                p.Imagen = dto.Imagen;
+                p.EstadoId = estadoId;
+                p.CategoriaId = dto.CategoriaId;
+                p.ProveedorId = dto.ProveedorId;
 
                 await _context.SaveChangesAsync();
-                _logger.LogInformation($"Producto actualizado correctamente: {id}");
-
                 return NoContent();
             }
             catch (DbUpdateConcurrencyException ex)
             {
-                _logger.LogError($"Error de concurrencia al actualizar producto {id}: {ex.Message}");
+                _logger.LogError(ex, "Concurrencia al actualizar producto {Id}", id);
                 return StatusCode(409, "Error de concurrencia al actualizar el producto");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error al actualizar producto: {ex.InnerException?.Message ?? ex.Message}");
-                return StatusCode(500, $"Error interno al actualizar el producto: {ex.InnerException?.Message ?? ex.Message}");
+                _logger.LogError(ex, "Error al actualizar producto {Id}", id);
+                return StatusCode(500, "Error interno al actualizar el producto");
             }
         }
 
-        // DELETE: api/Productos/5  (Soft delete + no borrar si está en uso)
-        [HttpDelete("{id}")]
+        // DELETE: api/Producto/5
+        // Soft delete -> EstadoId = 2 (Inactivo)
+        // Bloquea si el producto está siendo usado en DetallePedido
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteProducto(int id)
         {
             try
             {
-                var producto = await _context.Productos.FindAsync(id);
-                if (producto == null)
-                {
-                    _logger.LogWarning($"Intento de eliminar producto inexistente: {id}");
-                    return NotFound($"No se encontró el producto con ID {id}");
-                }
+                var p = await _context.Productos.FindAsync(id);
+                if (p == null) return NotFound($"No se encontró el producto con ID {id}");
 
-                // 1) Verificar si el producto está en uso (ajusta el DbSet/nombre de FK si difiere)
-                bool enUso = await _context.Pedido.AnyAsync(d => d.ProductoId == id);
-                // Si tu tabla se llama distinto (PedidoDetalles/DetallePedido/PedidoProductos), cambia esta línea.
-
+                // ¿Está en uso? (usa DetallePedidos, no Pedido)
+                bool enUso = await _context.DetallePedidos.AnyAsync(d => d.ProductoId == id);
                 if (enUso)
-                {
-                    _logger.LogWarning($"No se puede eliminar producto {id} porque está en uso.");
-                    return Conflict("No se puede eliminar el producto porque está en uso.");
-                }
+                    return Conflict("No se puede inactivar el producto porque está en uso en pedidos.");
 
-                // 2) Soft delete: cambiar EstadoId a 'Eliminado'
-                var idEliminado = await GetEstadoEliminadoIdAsync();
-                if (idEliminado == 0)
+                // Soft delete → Inactivo (2)
+                if (!EsInactivo(p.EstadoId))
                 {
-                    _logger.LogError("Estado 'Eliminado' no configurado en la tabla Estados.");
-                    return StatusCode(500, "No está configurado el estado 'Eliminado' en la tabla de Estados.");
-                }
-
-                if (producto.EstadoId != idEliminado)
-                {
-                    producto.EstadoId = idEliminado; // Soft delete
-                    _context.Entry(producto).State = EntityState.Modified;
+                    p.EstadoId = 2;
+                    _context.Entry(p).State = EntityState.Modified;
                     await _context.SaveChangesAsync();
                 }
 
-                _logger.LogInformation($"Producto marcado como Eliminado: {id}");
                 return NoContent();
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error al eliminar (soft delete) producto {id}: {ex.Message}");
+                _logger.LogError(ex, "Error al eliminar (inactivar) producto {Id}", id);
                 return StatusCode(500, "Error interno al eliminar el producto");
             }
         }
 
-        private bool ProductoExists(int id)
-        {
-            return _context.Productos.Any(p => p.Id == id);
-        }
+        private bool ProductoExists(int id) => _context.Productos.Any(p => p.Id == id);
     }
 }
+

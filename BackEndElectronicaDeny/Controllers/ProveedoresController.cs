@@ -1,12 +1,12 @@
-﻿using BackEnd_ElectronicaDeny.Data;
+﻿using BackEnd_ElectronicaDeny.Data;     // <-- ajusta si tu AppDbContext está en otro namespace
 using BackEndElectronicaDeny.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace BackEndElectronicaDeny.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class ProveedoresController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -16,50 +16,65 @@ namespace BackEndElectronicaDeny.Controllers
             _context = context;
         }
 
-        // Helper para obtener Id de 'Eliminado'
-        private async Task<int> GetEstadoEliminadoIdAsync()
+        // GET: api/proveedores?incluirInactivos=false
+        // Por defecto SOLO devuelve Activos (EstadoId == 1)
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Proveedor>>> GetProveedores([FromQuery] bool incluirInactivos = false)
         {
-            return await _context.Estados
-                .Where(e => e.Nombre == "Eliminado")
-                .Select(e => e.Id)
-                .FirstOrDefaultAsync();
+            IQueryable<Proveedor> q = _context.Proveedores.AsNoTracking();
+
+            if (!incluirInactivos)
+                q = q.Where(p => p.EstadoId == 1); // solo activos
+
+            var list = await q.ToListAsync();
+            return Ok(list);
         }
 
-        // GET: api/proveedores
-        // Por defecto NO trae Eliminados. Pásale ?incluirEliminados=true solo en pantallas administrativas.
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Proveedor>>> GetProveedores([FromQuery] bool incluirEliminados = false)
+        // GET: api/proveedores/activos
+        [HttpGet("activos")]
+        public async Task<ActionResult<IEnumerable<Proveedor>>> GetProveedoresActivos()
         {
-            var idEliminado = await GetEstadoEliminadoIdAsync();
+            var activos = await _context.Proveedores
+                .Where(p => p.EstadoId == 1)
+                .AsNoTracking()
+                .ToListAsync();
 
-            var q = _context.Proveedores
-                .Include(p => p.Estado)
-                .AsNoTracking();
-
-            if (!incluirEliminados && idEliminado != 0)
-                q = q.Where(p => p.EstadoId != idEliminado);
-
-            return await q.ToListAsync();
+            return Ok(activos);
         }
 
         // GET: api/proveedores/5
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<Proveedor>> GetProveedor(int id)
         {
-            var proveedor = await _context.Proveedores
-                .Include(p => p.Estado)
-                .FirstOrDefaultAsync(p => p.Id == id);
-
-            if (proveedor == null)
-                return NotFound();
-
+            var proveedor = await _context.Proveedores.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
+            if (proveedor == null) return NotFound();
             return proveedor;
+        }
+
+        // GET: api/proveedores/{proveedorId}/productos
+        // Devuelve SOLO productos ACTIVOS del proveedor indicado
+        [HttpGet("{proveedorId:int}/productos")]
+        public async Task<ActionResult<IEnumerable<object>>> GetProductosPorProveedor(int proveedorId)
+        {
+            var productos = await _context.Productos
+                .Where(p => p.ProveedorId == proveedorId && p.EstadoId == 1) // solo activos
+                .AsNoTracking()
+                .Select(p => new { p.Id, p.Nombre, p.ProveedorId })
+                .ToListAsync();
+
+            return Ok(productos);
         }
 
         // POST: api/proveedores
         [HttpPost]
-        public async Task<ActionResult<Proveedor>> AgregarProveedor(Proveedor proveedor)
+        public async Task<ActionResult<Proveedor>> AgregarProveedor([FromBody] Proveedor proveedor)
         {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            // Normaliza estado (1 Activo, 2 Inactivo)
+            if (proveedor.EstadoId != 1 && proveedor.EstadoId != 2)
+                proveedor.EstadoId = 1;
+
             _context.Proveedores.Add(proveedor);
             await _context.SaveChangesAsync();
 
@@ -67,17 +82,21 @@ namespace BackEndElectronicaDeny.Controllers
         }
 
         // PUT: api/proveedores/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProveedor(int id, Proveedor proveedor)
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> UpdateProveedor(int id, [FromBody] Proveedor proveedor)
         {
             if (id != proveedor.Id)
-                return BadRequest();
+                return BadRequest("El id del path no coincide con el cuerpo de la solicitud.");
 
             var proveedorDb = await _context.Proveedores.FindAsync(id);
             if (proveedorDb == null)
                 return NotFound();
 
-            // Actualiza campos según tu modelo
+            // Validar estado 1/2
+            if (proveedor.EstadoId != 1 && proveedor.EstadoId != 2)
+                return BadRequest("EstadoId inválido. Solo se permite 1 (Activo) o 2 (Inactivo).");
+
+            // Actualiza campos
             proveedorDb.Nombre = proveedor.Nombre;
             proveedorDb.NombreContacto = proveedor.NombreContacto;
             proveedorDb.Telefono = proveedor.Telefono;
@@ -85,35 +104,32 @@ namespace BackEndElectronicaDeny.Controllers
             proveedorDb.Correo = proveedor.Correo;
             proveedorDb.Direccion = proveedor.Direccion;
             proveedorDb.Descripcion = proveedor.Descripcion;
-            proveedorDb.EstadoId = proveedor.EstadoId;
+            proveedorDb.EstadoId = proveedor.EstadoId; // 1 o 2
 
             await _context.SaveChangesAsync();
             return NoContent();
         }
 
-        // DELETE: api/proveedores/5 (soft delete)
-        [HttpDelete("{id}")]
+        // DELETE: api/proveedores/5  (soft delete -> Inactivo)
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteProveedor(int id)
         {
             var proveedor = await _context.Proveedores.FindAsync(id);
             if (proveedor == null)
                 return NotFound();
 
-            // Verificar si está en uso (ajusta relaciones reales)
+            // ¿Está en uso? (ajusta si tienes más relaciones)
             bool enUso =
                 await _context.Productos.AnyAsync(p => p.ProveedorId == id) ||
-                await _context.Pedido.AnyAsync(c => c.ProveedorId == id);
+                await _context.Pedidos.AnyAsync(c => c.ProveedorId == id); // DbSet singular: Pedido
 
             if (enUso)
-                return Conflict("No se puede eliminar el proveedor porque está en uso.");
+                return Conflict("No se puede inactivar/eliminar el proveedor porque está en uso.");
 
-            var idEliminado = await GetEstadoEliminadoIdAsync();
-            if (idEliminado == 0)
-                return StatusCode(500, "No está configurado el estado 'Eliminado' en la tabla de Estados.");
-
-            if (proveedor.EstadoId != idEliminado)
+            // Soft delete: inactivar
+            if (proveedor.EstadoId != 2)
             {
-                proveedor.EstadoId = idEliminado;      // soft delete
+                proveedor.EstadoId = 2;
                 _context.Entry(proveedor).State = EntityState.Modified;
                 await _context.SaveChangesAsync();
             }
@@ -121,11 +137,18 @@ namespace BackEndElectronicaDeny.Controllers
             return NoContent();
         }
 
-        private bool ProveedorExists(int id)
+        // GET: api/proveedores/esta-en-uso/{id}
+        [HttpGet("esta-en-uso/{id:int}")]
+        public async Task<ActionResult<bool>> EstaEnUso(int id)
         {
-            return _context.Proveedores.Any(e => e.Id == id);
+            bool enUso =
+                await _context.Productos.AnyAsync(p => p.ProveedorId == id) ||
+                await _context.Pedidos.AnyAsync(c => c.ProveedorId == id); // DbSet singular: Pedido
+
+            return Ok(enUso);
         }
+
+        private bool ProveedorExists(int id) =>
+            _context.Proveedores.Any(e => e.Id == id);
     }
 }
-
-

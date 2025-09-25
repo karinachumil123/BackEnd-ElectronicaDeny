@@ -22,32 +22,6 @@ namespace BackEndElectronicaDeny.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("BackEndElectronicaDeny.Models.Categoria", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("CategoriaNombre")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Descripcion")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("EstadoId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EstadoId");
-
-                    b.ToTable("Categorias");
-                });
-
             modelBuilder.Entity("BackEndElectronicaDeny.Models.DetallePedido", b =>
                 {
                     b.Property<int>("Id")
@@ -63,9 +37,12 @@ namespace BackEndElectronicaDeny.Migrations
                         .HasColumnType("integer");
 
                     b.Property<decimal>("PrecioUnitario")
-                        .HasColumnType("numeric");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("ProductoId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ProductosId")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
@@ -74,7 +51,9 @@ namespace BackEndElectronicaDeny.Migrations
 
                     b.HasIndex("ProductoId");
 
-                    b.ToTable("DetallePedido");
+                    b.HasIndex("ProductosId");
+
+                    b.ToTable("DetallePedidos");
                 });
 
             modelBuilder.Entity("BackEndElectronicaDeny.Models.Empresa", b =>
@@ -116,40 +95,6 @@ namespace BackEndElectronicaDeny.Migrations
                         });
                 });
 
-            modelBuilder.Entity("BackEndElectronicaDeny.Models.EstadoProductoFisico", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("EstadoProductoFisico");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Nombre = "Disponible"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Nombre = "Por agotarse / Stock bajo"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Nombre = "Agotado"
-                        });
-                });
-
             modelBuilder.Entity("BackEndElectronicaDeny.Models.Pedido", b =>
                 {
                     b.Property<int>("Id")
@@ -158,11 +103,25 @@ namespace BackEndElectronicaDeny.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<int>("EstadoPedidoId")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("FechaPedido")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("NombrePedido")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("NumeroPedido")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<int>("ProductoId")
                         .HasColumnType("integer");
@@ -170,16 +129,17 @@ namespace BackEndElectronicaDeny.Migrations
                     b.Property<int>("ProveedorId")
                         .HasColumnType("integer");
 
-                    b.Property<decimal>("Total")
-                        .HasColumnType("numeric");
+                    b.Property<decimal>("TotalPedido")
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProductoId");
+                    b.HasIndex("NumeroPedido")
+                        .IsUnique();
 
                     b.HasIndex("ProveedorId");
 
-                    b.ToTable("Pedido");
+                    b.ToTable("Pedidos");
                 });
 
             modelBuilder.Entity("BackEndElectronicaDeny.Models.Productos", b =>
@@ -227,8 +187,6 @@ namespace BackEndElectronicaDeny.Migrations
 
                     b.HasIndex("CategoriaId");
 
-                    b.HasIndex("EstadoId");
-
                     b.HasIndex("ProveedorId");
 
                     b.ToTable("Productos");
@@ -243,7 +201,6 @@ namespace BackEndElectronicaDeny.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Correo")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Descripcion")
@@ -268,12 +225,9 @@ namespace BackEndElectronicaDeny.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("TelefonoContacto")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("EstadoId");
 
                     b.ToTable("Proveedores");
                 });
@@ -1159,9 +1113,6 @@ namespace BackEndElectronicaDeny.Migrations
                     b.Property<int>("EstadoId")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("EstadoProductoFisicoId")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime?>("FechaCreacion")
                         .HasColumnType("timestamp with time zone");
 
@@ -1195,8 +1146,6 @@ namespace BackEndElectronicaDeny.Migrations
 
                     b.HasIndex("EstadoId");
 
-                    b.HasIndex("EstadoProductoFisicoId");
-
                     b.HasIndex("RolId");
 
                     b.ToTable("Usuarios");
@@ -1216,15 +1165,29 @@ namespace BackEndElectronicaDeny.Migrations
                         });
                 });
 
-            modelBuilder.Entity("BackEndElectronicaDeny.Models.Categoria", b =>
+            modelBuilder.Entity("Categoria", b =>
                 {
-                    b.HasOne("BackEnd_ElectronicaDeny.Models.Estados", "Estado")
-                        .WithMany()
-                        .HasForeignKey("EstadoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
 
-                    b.Navigation("Estado");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CategoriaNombre")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("EstadoId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Categorias");
                 });
 
             modelBuilder.Entity("BackEndElectronicaDeny.Models.DetallePedido", b =>
@@ -1236,10 +1199,14 @@ namespace BackEndElectronicaDeny.Migrations
                         .IsRequired();
 
                     b.HasOne("BackEndElectronicaDeny.Models.Productos", "Producto")
-                        .WithMany("DetallePedidos")
+                        .WithMany()
                         .HasForeignKey("ProductoId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("BackEndElectronicaDeny.Models.Productos", null)
+                        .WithMany("DetallePedidos")
+                        .HasForeignKey("ProductosId");
 
                     b.Navigation("Pedido");
 
@@ -1248,35 +1215,21 @@ namespace BackEndElectronicaDeny.Migrations
 
             modelBuilder.Entity("BackEndElectronicaDeny.Models.Pedido", b =>
                 {
-                    b.HasOne("BackEndElectronicaDeny.Models.Productos", "Producto")
-                        .WithMany()
-                        .HasForeignKey("ProductoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("BackEndElectronicaDeny.Models.Proveedor", "Proveedor")
                         .WithMany()
                         .HasForeignKey("ProveedorId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("Producto");
 
                     b.Navigation("Proveedor");
                 });
 
             modelBuilder.Entity("BackEndElectronicaDeny.Models.Productos", b =>
                 {
-                    b.HasOne("BackEndElectronicaDeny.Models.Categoria", "Categoria")
+                    b.HasOne("Categoria", "Categoria")
                         .WithMany("Productos")
                         .HasForeignKey("CategoriaId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("BackEnd_ElectronicaDeny.Models.Estados", "Estado")
-                        .WithMany()
-                        .HasForeignKey("EstadoId")
-                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("BackEndElectronicaDeny.Models.Proveedor", "Proveedor")
@@ -1287,20 +1240,7 @@ namespace BackEndElectronicaDeny.Migrations
 
                     b.Navigation("Categoria");
 
-                    b.Navigation("Estado");
-
                     b.Navigation("Proveedor");
-                });
-
-            modelBuilder.Entity("BackEndElectronicaDeny.Models.Proveedor", b =>
-                {
-                    b.HasOne("BackEnd_ElectronicaDeny.Models.Estados", "Estado")
-                        .WithMany()
-                        .HasForeignKey("EstadoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Estado");
                 });
 
             modelBuilder.Entity("BackEnd_ElectronicaDeny.Models.Permiso", b =>
@@ -1337,10 +1277,6 @@ namespace BackEndElectronicaDeny.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("BackEndElectronicaDeny.Models.EstadoProductoFisico", null)
-                        .WithMany("Usuarios")
-                        .HasForeignKey("EstadoProductoFisicoId");
-
                     b.HasOne("BackEnd_ElectronicaDeny.Models.RolUsuario", "Rol")
                         .WithMany("Usuarios")
                         .HasForeignKey("RolId")
@@ -1350,16 +1286,6 @@ namespace BackEndElectronicaDeny.Migrations
                     b.Navigation("Estado");
 
                     b.Navigation("Rol");
-                });
-
-            modelBuilder.Entity("BackEndElectronicaDeny.Models.Categoria", b =>
-                {
-                    b.Navigation("Productos");
-                });
-
-            modelBuilder.Entity("BackEndElectronicaDeny.Models.EstadoProductoFisico", b =>
-                {
-                    b.Navigation("Usuarios");
                 });
 
             modelBuilder.Entity("BackEndElectronicaDeny.Models.Pedido", b =>
@@ -1387,6 +1313,11 @@ namespace BackEndElectronicaDeny.Migrations
                     b.Navigation("Permisos");
 
                     b.Navigation("Usuarios");
+                });
+
+            modelBuilder.Entity("Categoria", b =>
+                {
+                    b.Navigation("Productos");
                 });
 #pragma warning restore 612, 618
         }

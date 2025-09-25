@@ -15,6 +15,21 @@ namespace BackEndElectronicaDeny.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "Categorias",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    CategoriaNombre = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Descripcion = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    EstadoId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Categorias", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Empresa",
                 columns: table => new
                 {
@@ -31,19 +46,6 @@ namespace BackEndElectronicaDeny.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "EstadoProductoFisico",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Nombre = table.Column<string>(type: "text", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_EstadoProductoFisico", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Estados",
                 columns: table => new
                 {
@@ -54,6 +56,26 @@ namespace BackEndElectronicaDeny.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Estados", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Proveedores",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Nombre = table.Column<string>(type: "text", nullable: false),
+                    NombreContacto = table.Column<string>(type: "text", nullable: false),
+                    Telefono = table.Column<string>(type: "text", nullable: false),
+                    TelefonoContacto = table.Column<string>(type: "text", nullable: true),
+                    Correo = table.Column<string>(type: "text", nullable: true),
+                    Direccion = table.Column<string>(type: "text", nullable: true),
+                    Descripcion = table.Column<string>(type: "text", nullable: true),
+                    EstadoId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Proveedores", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -70,50 +92,63 @@ namespace BackEndElectronicaDeny.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Categorias",
+                name: "Pedidos",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    CategoriaNombre = table.Column<string>(type: "text", nullable: false),
-                    Descripcion = table.Column<string>(type: "text", nullable: false),
-                    EstadoId = table.Column<int>(type: "integer", nullable: false)
+                    ProductoId = table.Column<int>(type: "integer", nullable: false),
+                    NumeroPedido = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    NombrePedido = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
+                    FechaPedido = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ProveedorId = table.Column<int>(type: "integer", nullable: false),
+                    EstadoPedidoId = table.Column<int>(type: "integer", nullable: false),
+                    Descripcion = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    TotalPedido = table.Column<decimal>(type: "numeric(18,2)", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Categorias", x => x.Id);
+                    table.PrimaryKey("PK_Pedidos", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Categorias_Estados_EstadoId",
-                        column: x => x.EstadoId,
-                        principalTable: "Estados",
+                        name: "FK_Pedidos_Proveedores_ProveedorId",
+                        column: x => x.ProveedorId,
+                        principalTable: "Proveedores",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "Proveedores",
+                name: "Productos",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Nombre = table.Column<string>(type: "text", nullable: false),
-                    NombreContacto = table.Column<string>(type: "text", nullable: false),
-                    Telefono = table.Column<string>(type: "text", nullable: false),
-                    TelefonoContacto = table.Column<string>(type: "text", nullable: false),
-                    Correo = table.Column<string>(type: "text", nullable: false),
-                    Direccion = table.Column<string>(type: "text", nullable: true),
+                    CodigoProducto = table.Column<string>(type: "text", nullable: false),
+                    MarcaProducto = table.Column<string>(type: "text", nullable: false),
+                    PrecioAdquisicion = table.Column<decimal>(type: "numeric", nullable: false),
+                    PrecioVenta = table.Column<decimal>(type: "numeric", nullable: false),
+                    EstadoId = table.Column<int>(type: "integer", nullable: false),
                     Descripcion = table.Column<string>(type: "text", nullable: true),
-                    EstadoId = table.Column<int>(type: "integer", nullable: false)
+                    Imagen = table.Column<string>(type: "text", nullable: true),
+                    CategoriaId = table.Column<int>(type: "integer", nullable: false),
+                    ProveedorId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Proveedores", x => x.Id);
+                    table.PrimaryKey("PK_Productos", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Proveedores_Estados_EstadoId",
-                        column: x => x.EstadoId,
-                        principalTable: "Estados",
+                        name: "FK_Productos_Categorias_CategoriaId",
+                        column: x => x.CategoriaId,
+                        principalTable: "Categorias",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Productos_Proveedores_ProveedorId",
+                        column: x => x.ProveedorId,
+                        principalTable: "Proveedores",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -154,17 +189,11 @@ namespace BackEndElectronicaDeny.Migrations
                     EstadoId = table.Column<int>(type: "integer", nullable: false),
                     RolId = table.Column<int>(type: "integer", nullable: false),
                     CodigoRecuperacion = table.Column<string>(type: "text", nullable: true),
-                    FechaExpiracionCodigo = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    EstadoProductoFisicoId = table.Column<int>(type: "integer", nullable: true)
+                    FechaExpiracionCodigo = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Usuarios", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Usuarios_EstadoProductoFisico_EstadoProductoFisicoId",
-                        column: x => x.EstadoProductoFisicoId,
-                        principalTable: "EstadoProductoFisico",
-                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Usuarios_Estados_EstadoId",
                         column: x => x.EstadoId,
@@ -180,43 +209,37 @@ namespace BackEndElectronicaDeny.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Productos",
+                name: "DetallePedidos",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Nombre = table.Column<string>(type: "text", nullable: false),
-                    CodigoProducto = table.Column<string>(type: "text", nullable: false),
-                    MarcaProducto = table.Column<string>(type: "text", nullable: false),
-                    PrecioAdquisicion = table.Column<decimal>(type: "numeric", nullable: false),
-                    PrecioVenta = table.Column<decimal>(type: "numeric", nullable: false),
-                    EstadoId = table.Column<int>(type: "integer", nullable: false),
-                    Descripcion = table.Column<string>(type: "text", nullable: true),
-                    Imagen = table.Column<string>(type: "text", nullable: true),
-                    CategoriaId = table.Column<int>(type: "integer", nullable: false),
-                    ProveedorId = table.Column<int>(type: "integer", nullable: false)
+                    PedidoId = table.Column<int>(type: "integer", nullable: false),
+                    ProductoId = table.Column<int>(type: "integer", nullable: false),
+                    Cantidad = table.Column<int>(type: "integer", nullable: false),
+                    PrecioUnitario = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    ProductosId = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Productos", x => x.Id);
+                    table.PrimaryKey("PK_DetallePedidos", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Productos_Categorias_CategoriaId",
-                        column: x => x.CategoriaId,
-                        principalTable: "Categorias",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Productos_Estados_EstadoId",
-                        column: x => x.EstadoId,
-                        principalTable: "Estados",
+                        name: "FK_DetallePedidos_Pedidos_PedidoId",
+                        column: x => x.PedidoId,
+                        principalTable: "Pedidos",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Productos_Proveedores_ProveedorId",
-                        column: x => x.ProveedorId,
-                        principalTable: "Proveedores",
+                        name: "FK_DetallePedidos_Productos_ProductoId",
+                        column: x => x.ProductoId,
+                        principalTable: "Productos",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_DetallePedidos_Productos_ProductosId",
+                        column: x => x.ProductosId,
+                        principalTable: "Productos",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -244,77 +267,10 @@ namespace BackEndElectronicaDeny.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateTable(
-                name: "Pedido",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    FechaPedido = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    ProductoId = table.Column<int>(type: "integer", nullable: false),
-                    Total = table.Column<decimal>(type: "numeric", nullable: false),
-                    ProveedorId = table.Column<int>(type: "integer", nullable: false),
-                    EstadoPedidoId = table.Column<int>(type: "integer", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Pedido", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Pedido_Productos_ProductoId",
-                        column: x => x.ProductoId,
-                        principalTable: "Productos",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Pedido_Proveedores_ProveedorId",
-                        column: x => x.ProveedorId,
-                        principalTable: "Proveedores",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "DetallePedido",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    PedidoId = table.Column<int>(type: "integer", nullable: false),
-                    ProductoId = table.Column<int>(type: "integer", nullable: false),
-                    Cantidad = table.Column<int>(type: "integer", nullable: false),
-                    PrecioUnitario = table.Column<decimal>(type: "numeric", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_DetallePedido", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_DetallePedido_Pedido_PedidoId",
-                        column: x => x.PedidoId,
-                        principalTable: "Pedido",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_DetallePedido_Productos_ProductoId",
-                        column: x => x.ProductoId,
-                        principalTable: "Productos",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
             migrationBuilder.InsertData(
                 table: "Empresa",
                 columns: new[] { "Id", "Correo", "Direccion", "Nombre", "Telefono" },
                 values: new object[] { 1, "electronicadeny@gmail.com", "Aldea Chuiquel Central Uno, Sololá, Sololá", "Electrónica Deny", "3883 6490" });
-
-            migrationBuilder.InsertData(
-                table: "EstadoProductoFisico",
-                columns: new[] { "Id", "Nombre" },
-                values: new object[,]
-                {
-                    { 1, "Disponible" },
-                    { 2, "Por agotarse / Stock bajo" },
-                    { 3, "Agotado" }
-                });
 
             migrationBuilder.InsertData(
                 table: "Estados",
@@ -487,32 +443,33 @@ namespace BackEndElectronicaDeny.Migrations
 
             migrationBuilder.InsertData(
                 table: "Usuarios",
-                columns: new[] { "Id", "Apellido", "CodigoRecuperacion", "Contrasena", "Correo", "EstadoId", "EstadoProductoFisicoId", "FechaCreacion", "FechaExpiracionCodigo", "FechaNacimiento", "Imagen", "Nombre", "RolId", "Telefono", "UltimoInicioSesion", "edad" },
-                values: new object[] { 1, "Xoquic", null, "@Admin2025", "electronicadeny@gmail.com", 1, null, null, null, null, null, "Deny", 1, "5881 6213", null, 0 });
+                columns: new[] { "Id", "Apellido", "CodigoRecuperacion", "Contrasena", "Correo", "EstadoId", "FechaCreacion", "FechaExpiracionCodigo", "FechaNacimiento", "Imagen", "Nombre", "RolId", "Telefono", "UltimoInicioSesion", "edad" },
+                values: new object[] { 1, "Xoquic", null, "@Admin2025", "electronicadeny@gmail.com", 1, null, null, null, null, "Deny", 1, "5881 6213", null, 0 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Categorias_EstadoId",
-                table: "Categorias",
-                column: "EstadoId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_DetallePedido_PedidoId",
-                table: "DetallePedido",
+                name: "IX_DetallePedidos_PedidoId",
+                table: "DetallePedidos",
                 column: "PedidoId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_DetallePedido_ProductoId",
-                table: "DetallePedido",
+                name: "IX_DetallePedidos_ProductoId",
+                table: "DetallePedidos",
                 column: "ProductoId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Pedido_ProductoId",
-                table: "Pedido",
-                column: "ProductoId");
+                name: "IX_DetallePedidos_ProductosId",
+                table: "DetallePedidos",
+                column: "ProductosId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Pedido_ProveedorId",
-                table: "Pedido",
+                name: "IX_Pedidos_NumeroPedido",
+                table: "Pedidos",
+                column: "NumeroPedido",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Pedidos_ProveedorId",
+                table: "Pedidos",
                 column: "ProveedorId");
 
             migrationBuilder.CreateIndex(
@@ -526,19 +483,9 @@ namespace BackEndElectronicaDeny.Migrations
                 column: "CategoriaId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Productos_EstadoId",
-                table: "Productos",
-                column: "EstadoId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Productos_ProveedorId",
                 table: "Productos",
                 column: "ProveedorId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Proveedores_EstadoId",
-                table: "Proveedores",
-                column: "EstadoId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RolPermisos_PermisoId",
@@ -551,11 +498,6 @@ namespace BackEndElectronicaDeny.Migrations
                 column: "EstadoId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Usuarios_EstadoProductoFisicoId",
-                table: "Usuarios",
-                column: "EstadoProductoFisicoId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Usuarios_RolId",
                 table: "Usuarios",
                 column: "RolId");
@@ -565,7 +507,7 @@ namespace BackEndElectronicaDeny.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "DetallePedido");
+                name: "DetallePedidos");
 
             migrationBuilder.DropTable(
                 name: "Empresa");
@@ -577,19 +519,16 @@ namespace BackEndElectronicaDeny.Migrations
                 name: "Usuarios");
 
             migrationBuilder.DropTable(
-                name: "Pedido");
-
-            migrationBuilder.DropTable(
-                name: "Permisos");
-
-            migrationBuilder.DropTable(
-                name: "EstadoProductoFisico");
+                name: "Pedidos");
 
             migrationBuilder.DropTable(
                 name: "Productos");
 
             migrationBuilder.DropTable(
-                name: "Roles");
+                name: "Permisos");
+
+            migrationBuilder.DropTable(
+                name: "Estados");
 
             migrationBuilder.DropTable(
                 name: "Categorias");
@@ -598,7 +537,7 @@ namespace BackEndElectronicaDeny.Migrations
                 name: "Proveedores");
 
             migrationBuilder.DropTable(
-                name: "Estados");
+                name: "Roles");
         }
     }
 }

@@ -24,6 +24,11 @@ namespace BackEndElectronicaDeny.Models
         [Required(ErrorMessage = "El precio de venta es obligatorio")]
         [Range(0, 999999, ErrorMessage = "El precio de venta debe estar entre 0 y 999999")]
         public decimal PrecioVenta { get; set; }
+
+        /// <summary>
+        /// 1 = Activo, 2 = Inactivo (viene del Front)
+        /// </summary>
+        [Required]
         public int EstadoId { get; set; }
 
         public string? Descripcion { get; set; }
@@ -44,9 +49,10 @@ namespace BackEndElectronicaDeny.Models
         [ForeignKey("ProveedorId")]
         public virtual Proveedor? Proveedor { get; set; }
 
-        [JsonIgnore]
-        [ForeignKey("EstadoId")]
-        public virtual Estados Estado { get; set; }
+        // 🔴 Se elimina la relación con la tabla Estados:
+        // [JsonIgnore]
+        // [ForeignKey("EstadoId")]
+        // public virtual Estados Estado { get; set; }
 
         public virtual ICollection<DetallePedido> DetallePedidos { get; set; } = new HashSet<DetallePedido>();
     }
