@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Identity;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -21,17 +22,25 @@ namespace BackEnd_ElectronicaDeny.Controllers
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthController> _logger;
         private readonly IAuthService _authService;
+        private readonly IPasswordHasher<Usuario> _passwordHasher;
 
-
-        public AuthController(AppDbContext context, IConfiguration configuration, ILogger<AuthController> logger, IAuthService authService)
+        public AuthController(
+            AppDbContext context,
+            IConfiguration configuration,
+            ILogger<AuthController> logger,
+            IAuthService authService,
+            IPasswordHasher<Usuario> passwordHasher)
         {
             _context = context;
             _configuration = configuration;
             _logger = logger;
             _authService = authService;
+            _passwordHasher = passwordHasher;
         }
 
-
+        // ===========================
+        // LOGIN (verifica contra HASH)
+        // ===========================
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginModel login)
         {
@@ -39,9 +48,7 @@ namespace BackEnd_ElectronicaDeny.Controllers
             {
                 _logger.LogInformation("Intento de inicio de sesión para el usuario: {Email}", login.Email);
 
-                // Primero, obtener el usuario y sus relaciones
                 var usuario = await _context.Usuarios
-                    .Include(u => u.Estado)
                     .Include(u => u.Rol)
                     .FirstOrDefaultAsync(u => u.Correo == login.Email);
 
@@ -51,31 +58,35 @@ namespace BackEnd_ElectronicaDeny.Controllers
                     return Unauthorized("Credenciales incorrectas");
                 }
 
-                // Verificar si el usuario está activo
-
-                var estado = await _context.Estados.FindAsync(usuario.EstadoId);
-                if (estado == null || estado.Nombre != "Activo")
+                if (usuario.Estado != 1)
                 {
                     _logger.LogWarning("Usuario inactivo: {Email}", login.Email);
                     return Unauthorized("Usuario inactivo");
                 }
 
-                // Verificar la contraseña
-                if (usuario.Contrasena != login.Password)
+                // Verificar contraseña HASH
+                var verification = _passwordHasher.VerifyHashedPassword(usuario, usuario.Contrasena, login.Password);
+                if (verification == PasswordVerificationResult.Failed)
                 {
                     _logger.LogWarning("Contraseña incorrecta para el usuario: {Email}", login.Email);
                     return Unauthorized("Credenciales incorrectas");
                 }
 
-                // Obtener el rol
-                var rol = await _context.Roles.FindAsync(usuario.RolId);
+                // (Opcional) Re-hash si el algoritmo cambió
+                if (verification == PasswordVerificationResult.SuccessRehashNeeded)
+                {
+                    usuario.Contrasena = _passwordHasher.HashPassword(usuario, login.Password);
+                    await _context.SaveChangesAsync();
+                }
+
+                // Obtener rol y permisos
+                var rol = usuario.Rol ?? await _context.Roles.FindAsync(usuario.RolId);
                 if (rol == null)
                 {
                     _logger.LogError("Rol no encontrado para el usuario: {Email}", login.Email);
                     return StatusCode(500, "Error en la configuración del usuario");
                 }
 
-                // Obtener permisos del rol
                 var permisos = await _context.RolPermisos
                     .Where(rp => rp.RolId == usuario.RolId)
                     .Select(rp => rp.Permiso.Nombre)
@@ -84,9 +95,9 @@ namespace BackEnd_ElectronicaDeny.Controllers
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
-                    new Claim(ClaimTypes.Name, usuario.Nombre),
-                    new Claim(ClaimTypes.Role, rol.Nombre),
-                    new Claim("Email", usuario.Correo),
+                    new Claim(ClaimTypes.Name, usuario.Nombre ?? string.Empty),
+                    new Claim(ClaimTypes.Role, rol.Nombre ?? string.Empty),
+                    new Claim("Email", usuario.Correo ?? string.Empty),
                 };
 
                 var secretKey = _configuration["Jwt:SecretKey"];
@@ -95,14 +106,14 @@ namespace BackEnd_ElectronicaDeny.Controllers
                     _logger.LogError("La clave JWT no está configurada");
                     return StatusCode(500, "Error de configuración JWT");
                 }
-                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
 
+                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
                 var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
                 var token = new JwtSecurityToken(
                     issuer: _configuration["Jwt:Issuer"],
                     audience: _configuration["Jwt:Audience"],
                     claims: claims,
-                    expires: DateTime.Now.AddDays(1),
+                    expires: DateTime.UtcNow.AddDays(1),
                     signingCredentials: creds
                 );
 
@@ -123,7 +134,6 @@ namespace BackEnd_ElectronicaDeny.Controllers
                     userImage = usuario.Imagen,
                     userPermissions = permisos
                 });
-
             }
             catch (Exception ex)
             {
@@ -135,61 +145,92 @@ namespace BackEnd_ElectronicaDeny.Controllers
                     stackTrace = ex.StackTrace
                 });
             }
-
-
         }
-        [HttpPost("recuperar-contrasena")]
-        public async Task<IActionResult> RecuperarContrasena([FromBody] string correo)
-        {
-            if (string.IsNullOrEmpty(correo))
-            {
-                return BadRequest(new { mensaje = "El correo es obligatorio." });
-            }
 
-            var resultado = await _authService.EnviarCodigoRecuperacionAsync(correo);
-            if (!resultado)
-            {
-                return NotFound(new { mensaje = "Correo no encontrado o error al enviar el código" });
-            }
+        // =======================================================
+        // RECUPERACIÓN: Enviar código a correo (sin cambios lógicos)
+        // =======================================================
+        [HttpPost("recuperar-contrasena")]
+        public async Task<IActionResult> RecuperarContrasena([FromBody] RecuperarContrasenaDto dto)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Correo))
+                return BadRequest(new { mensaje = "El correo es obligatorio." });
+
+            var ok = await _authService.EnviarCodigoRecuperacionAsync(dto.Correo.Trim().ToLowerInvariant());
+            if (!ok)
+                return NotFound(new { mensaje = "Correo no encontrado o error al enviar el código." });
 
             return Ok(new { mensaje = "Código de recuperación enviado exitosamente" });
         }
 
+        // =======================================================
+        // RECUPERACIÓN: Verificar código (sin cambios lógicos)
+        // =======================================================
         [HttpPost("verificar-codigo-recuperacion")]
-        public async Task<IActionResult> VerificarCodigoRecuperacion([FromBody] VerificarCodigoRequest request)
+        public async Task<IActionResult> VerificarCodigoRecuperacion([FromBody] VerificarCodigoRequest req)
         {
-            if (string.IsNullOrEmpty(request.Correo) || string.IsNullOrEmpty(request.Codigo))
-            {
-                return BadRequest(new { message = "El correo y el código son obligatorios" });
-            }
+            if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
-            var resultado = await _authService.VerificarCodigoRecuperacionAsync(request.Correo, request.Codigo);
-
-            if (!resultado)
-            {
-                return BadRequest(new { message = "Código incorrecto o expirado" });
-            }
+            var correo = req.Correo.Trim().ToLowerInvariant();
+            var ok = await _authService.VerificarCodigoRecuperacionAsync(correo, req.Codigo.Trim());
+            if (!ok) return BadRequest(new { message = "Código incorrecto o expirado" });
 
             return Ok(new { message = "Código verificado correctamente" });
         }
 
-
+        // =============
+        // RECUPERACIÓN
+        // =============
         [HttpPost("reset-password")]
-        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordModel model)
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest req)
         {
-            var result = await _authService.ResetPasswordAsync(model);
-            if (!result)
-                return BadRequest(new { message = "Código inválido o correo incorrecto." });
+            try
+            {
+                if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
-            return Ok(new { message = "Contraseña actualizada correctamente." });
+                var correo = req.Correo.Trim().ToLowerInvariant();
+                var user = await _context.Usuarios.FirstOrDefaultAsync(u => u.Correo == correo);
+                if (user == null) return NotFound(new { message = "Correo no registrado." });
+
+                var codigoValido = await _authService.VerificarCodigoRecuperacionAsync(correo, req.Codigo.Trim());
+                if (!codigoValido) return BadRequest(new { message = "Código inválido o expirado." });
+
+                // HASH de la nueva contraseña
+                user.Contrasena = _passwordHasher.HashPassword(user, req.NuevaContrasena);
+
+                // Limpia el código para que no se reutilice
+                user.CodigoRecuperacion = null;
+                user.FechaExpiracionCodigo = null;
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Contraseña actualizada correctamente." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en reset-password para {Correo}", req?.Correo);
+                return StatusCode(500, new { message = "Error interno del servidor." });
+            }
         }
-
     }
 
+    // ====== DTOs ======
     public class LoginModel
     {
         public string Email { get; set; }
         public string Password { get; set; }
     }
 
+    public class VerificarCodigoRequest
+    {
+        public string Correo { get; set; }
+        public string Codigo { get; set; }
+    }
+
+    public class ResetPasswordModel
+    {
+        public string Correo { get; set; }
+        public string NuevaContrasena { get; set; }
+        public string Codigo { get; set; }
+    }
 }

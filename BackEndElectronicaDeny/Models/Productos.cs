@@ -48,12 +48,7 @@ namespace BackEndElectronicaDeny.Models
         [JsonIgnore]
         [ForeignKey("ProveedorId")]
         public virtual Proveedor? Proveedor { get; set; }
-
-        // 🔴 Se elimina la relación con la tabla Estados:
-        // [JsonIgnore]
-        // [ForeignKey("EstadoId")]
-        // public virtual Estados Estado { get; set; }
-
         public virtual ICollection<DetallePedido> DetallePedidos { get; set; } = new HashSet<DetallePedido>();
+        public virtual Stock? Stock { get; set; } 
     }
 }

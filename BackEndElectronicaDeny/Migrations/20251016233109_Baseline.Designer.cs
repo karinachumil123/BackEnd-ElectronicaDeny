@@ -3,6 +3,7 @@ using System;
 using BackEnd_ElectronicaDeny.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BackEndElectronicaDeny.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251016233109_Baseline")]
+    partial class Baseline
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -912,403 +915,440 @@ namespace BackEndElectronicaDeny.Migrations
                         {
                             Id = 68,
                             Nombre = "Eliminar Reportes de Inventario"
-                        },
-                        new
-                        {
-                            Id = 69,
-                            Nombre = "Ver Clientes"
-                        },
-                        new
-                        {
-                            Id = 70,
-                            Nombre = "Crear Clientes"
-                        },
-                        new
-                        {
-                            Id = 71,
-                            Nombre = "Editar Clientes"
-                        },
-                        new
-                        {
-                            Id = 72,
-                            Nombre = "Eliminar Clientes"
                         });
                 });
 
             modelBuilder.Entity("BackEnd_ElectronicaDeny.Models.RolPermiso", b =>
                 {
-                    b.Property<int>("RolId")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("PermisoId")
                         .HasColumnType("integer");
 
-                    b.HasKey("RolId", "PermisoId");
+                    b.Property<int>("RolId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
 
                     b.HasIndex("PermisoId");
+
+                    b.HasIndex("RolId", "PermisoId")
+                        .IsUnique();
 
                     b.ToTable("RolPermisos", (string)null);
 
                     b.HasData(
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 1
+                            Id = 1,
+                            PermisoId = 1,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 2
+                            Id = 2,
+                            PermisoId = 2,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 3
+                            Id = 3,
+                            PermisoId = 3,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 4
+                            Id = 4,
+                            PermisoId = 4,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 5
+                            Id = 5,
+                            PermisoId = 5,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 6
+                            Id = 6,
+                            PermisoId = 6,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 7
+                            Id = 7,
+                            PermisoId = 7,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 8
+                            Id = 8,
+                            PermisoId = 8,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 9
+                            Id = 9,
+                            PermisoId = 9,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 10
+                            Id = 10,
+                            PermisoId = 10,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 11
+                            Id = 11,
+                            PermisoId = 11,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 12
+                            Id = 12,
+                            PermisoId = 12,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 13
+                            Id = 13,
+                            PermisoId = 13,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 14
+                            Id = 14,
+                            PermisoId = 14,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 15
+                            Id = 15,
+                            PermisoId = 15,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 16
+                            Id = 16,
+                            PermisoId = 16,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 17
+                            Id = 17,
+                            PermisoId = 17,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 18
+                            Id = 18,
+                            PermisoId = 18,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 19
+                            Id = 19,
+                            PermisoId = 19,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 20
+                            Id = 20,
+                            PermisoId = 20,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 21
+                            Id = 21,
+                            PermisoId = 21,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 22
+                            Id = 22,
+                            PermisoId = 22,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 23
+                            Id = 23,
+                            PermisoId = 23,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 24
+                            Id = 24,
+                            PermisoId = 24,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 25
+                            Id = 25,
+                            PermisoId = 25,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 26
+                            Id = 26,
+                            PermisoId = 26,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 27
+                            Id = 27,
+                            PermisoId = 27,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 28
+                            Id = 28,
+                            PermisoId = 28,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 29
+                            Id = 29,
+                            PermisoId = 29,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 30
+                            Id = 30,
+                            PermisoId = 30,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 31
+                            Id = 31,
+                            PermisoId = 31,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 32
+                            Id = 32,
+                            PermisoId = 32,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 33
+                            Id = 33,
+                            PermisoId = 33,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 34
+                            Id = 34,
+                            PermisoId = 34,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 35
+                            Id = 35,
+                            PermisoId = 35,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 36
+                            Id = 36,
+                            PermisoId = 36,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 37
+                            Id = 37,
+                            PermisoId = 37,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 38
+                            Id = 38,
+                            PermisoId = 38,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 39
+                            Id = 39,
+                            PermisoId = 39,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 40
+                            Id = 40,
+                            PermisoId = 40,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 41
+                            Id = 41,
+                            PermisoId = 41,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 42
+                            Id = 42,
+                            PermisoId = 42,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 43
+                            Id = 43,
+                            PermisoId = 43,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 44
+                            Id = 44,
+                            PermisoId = 44,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 45
+                            Id = 45,
+                            PermisoId = 45,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 46
+                            Id = 46,
+                            PermisoId = 46,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 47
+                            Id = 47,
+                            PermisoId = 47,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 48
+                            Id = 48,
+                            PermisoId = 48,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 49
+                            Id = 49,
+                            PermisoId = 49,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 50
+                            Id = 50,
+                            PermisoId = 50,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 51
+                            Id = 51,
+                            PermisoId = 51,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 52
+                            Id = 52,
+                            PermisoId = 52,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 53
+                            Id = 53,
+                            PermisoId = 53,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 54
+                            Id = 54,
+                            PermisoId = 54,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 55
+                            Id = 55,
+                            PermisoId = 55,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 56
+                            Id = 56,
+                            PermisoId = 56,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 57
+                            Id = 57,
+                            PermisoId = 57,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 58
+                            Id = 58,
+                            PermisoId = 58,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 59
+                            Id = 59,
+                            PermisoId = 59,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 60
+                            Id = 60,
+                            PermisoId = 60,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 61
+                            Id = 61,
+                            PermisoId = 61,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 62
+                            Id = 62,
+                            PermisoId = 62,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 63
+                            Id = 63,
+                            PermisoId = 63,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 64
+                            Id = 64,
+                            PermisoId = 64,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 65
+                            Id = 65,
+                            PermisoId = 65,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 66
+                            Id = 66,
+                            PermisoId = 66,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 67
+                            Id = 67,
+                            PermisoId = 67,
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
-                            PermisoId = 68
-                        },
-                        new
-                        {
-                            RolId = 1,
-                            PermisoId = 69
-                        },
-                        new
-                        {
-                            RolId = 1,
-                            PermisoId = 70
-                        },
-                        new
-                        {
-                            RolId = 1,
-                            PermisoId = 71
-                        },
-                        new
-                        {
-                            RolId = 1,
-                            PermisoId = 72
+                            Id = 68,
+                            PermisoId = 68,
+                            RolId = 1
                         });
                 });
 

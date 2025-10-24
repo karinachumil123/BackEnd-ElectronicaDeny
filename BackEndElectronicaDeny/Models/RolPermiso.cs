@@ -1,11 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BackEnd_ElectronicaDeny.Models
 {
     public class RolPermiso
     {
-        [Key]
-        public int Id { get; set; }
         public int RolId { get; set; }
         public int PermisoId { get; set; }
 

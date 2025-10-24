@@ -15,7 +15,7 @@ namespace BackEndElectronicaDeny.Models
         public int Id { get; set; }
 
         [Required]
-        public string Nombre { get; set; } = string.Empty; // (antes NombreEmpresa)
+        public string Nombre { get; set; } = string.Empty; 
 
         [Required]
         public string NombreContacto { get; set; } = string.Empty;
@@ -27,14 +27,8 @@ namespace BackEndElectronicaDeny.Models
         public string? Direccion { get; set; }
         public string? Descripcion { get; set; }
 
-        /// <summary>
-        /// 1 = Activo, 2 = Inactivo (sin FK a tabla Estados)
-        /// </summary>
         [Required]
         public int EstadoId { get; set; }
-
-        // Se elimina la navegación a Estados y el ForeignKey
-        // [JsonIgnore] [ValidateNever] [ForeignKey("EstadoId")] public virtual Estados Estado { get; set; }
 
         [JsonIgnore]
         public virtual ICollection<Productos> Productos { get; set; }

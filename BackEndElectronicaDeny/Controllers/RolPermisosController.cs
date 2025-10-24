@@ -54,20 +54,13 @@ namespace BackEnd_ElectronicaDeny.Controllers
             return Ok(new { message = "Permisos asignados correctamente" });
         }
 
-
-        // Obtener los permisos asignados a un rol
-        [HttpGet("{rolId}/permisos")]
+        [HttpGet("{rolId:int}/permisos")]
         public async Task<IActionResult> ObtenerPermisosDeRol(int rolId)
         {
             var permisos = await _context.RolPermisos
                 .Where(rp => rp.RolId == rolId)
-                .Select(rp => new { rp.Permiso.Id, rp.Permiso.Nombre }) // Solo id y nombre del permiso
+                .Select(rp => new { Id = rp.PermisoId, Nombre = rp.Permiso!.Nombre })
                 .ToListAsync();
-
-            if (!permisos.Any())
-            {
-                return NotFound("Este rol no tiene permisos asignados.");
-            }
 
             return Ok(permisos);
         }
@@ -75,23 +68,28 @@ namespace BackEnd_ElectronicaDeny.Controllers
         [HttpPut("{rolId}/actualizar-permisos")]
         public async Task<IActionResult> ActualizarPermisosDeRol(int rolId, [FromBody] List<int> permisoIds)
         {
-            var rol = await _context.Roles.FindAsync(rolId);
-            if (rol == null)
+            try
             {
-                return NotFound("El rol no existe.");
+                var rol = await _context.Roles.FindAsync(rolId);
+                if (rol == null) return NotFound("El rol no existe.");
+
+                var actuales = _context.RolPermisos.Where(rp => rp.RolId == rolId);
+                _context.RolPermisos.RemoveRange(actuales);
+
+                var nuevos = permisoIds.Select(id => new RolPermiso { RolId = rolId, PermisoId = id });
+                await _context.RolPermisos.AddRangeAsync(nuevos);
+
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Permisos actualizados correctamente." });
             }
-
-            // 1️⃣ Eliminar permisos existentes
-            var permisosActuales = _context.RolPermisos.Where(rp => rp.RolId == rolId);
-            _context.RolPermisos.RemoveRange(permisosActuales);
-
-            // 2️⃣ Agregar solo los permisos enviados
-            var nuevosPermisos = permisoIds.Select(id => new RolPermiso { RolId = rolId, PermisoId = id });
-            await _context.RolPermisos.AddRangeAsync(nuevosPermisos);
-
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Permisos actualizados correctamente." });
+            catch (Exception ex)
+            {
+                // Log detallado
+                Console.WriteLine($"Error al actualizar permisos: {ex.Message}");
+                Console.WriteLine(ex.InnerException?.Message);
+                return StatusCode(500, $"Error al guardar cambios: {ex.InnerException?.Message ?? ex.Message}");
+            }
         }
+
     }
 }

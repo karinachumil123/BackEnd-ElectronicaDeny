@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BackEnd_ElectronicaDeny.DTOs
 {
@@ -6,32 +7,29 @@ namespace BackEnd_ElectronicaDeny.DTOs
     {
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "El nombre es obligatorio")]
-        [StringLength(50, ErrorMessage = "El nombre no puede exceder 50 caracteres")]
+        [Required, StringLength(50)]
         public string Nombre { get; set; }
 
-        [Required(ErrorMessage = "El apellido es obligatorio")]
-        [StringLength(50, ErrorMessage = "El apellido no puede exceder 50 caracteres")]
+        [Required, StringLength(50)]
         public string Apellido { get; set; }
 
-        [Required(ErrorMessage = "El correo es obligatorio")]
-        [EmailAddress(ErrorMessage = "El formato del correo no es válido")]
+        [Required, EmailAddress]
         public string Correo { get; set; }
 
-        [Phone(ErrorMessage = "El formato del teléfono no es válido")]
+        [Phone]
         public string Telefono { get; set; }
-        public DateTime FechaNacimiento { get; set; }
+
+        [Column(TypeName = "date")]
+        public DateTime? FechaNacimiento { get; set; }
         public int edad { get; set; }
         public string Imagen { get; set; }
 
-        [Required(ErrorMessage = "El estado es obligatorio")]
-        [Range(1, int.MaxValue, ErrorMessage = "Seleccione un estado válido")]
-        public int EstadoId { get; set; }
+        [Required, Range(1, 2)]  
+        public int Estado { get; set; }
 
-        [Required(ErrorMessage = "El rol es obligatorio")]
-        [Range(1, int.MaxValue, ErrorMessage = "Seleccione un rol válido")]
+        [Required, Range(1, int.MaxValue)]
         public int RolId { get; set; }
 
-        // Nota: No incluir campo Contrasena aquí
+        public string? NuevaContrasena { get; set; }  // si alguna vez necesitas reset
     }
 }

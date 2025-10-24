@@ -1,4 +1,6 @@
-﻿namespace BackEnd_ElectronicaDeny.DTOs
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace BackEnd_ElectronicaDeny.DTOs
 {
     public class UsuarioCreateDto
     {
@@ -6,12 +8,18 @@
         public string Apellido { get; set; }
         public string Correo { get; set; }
         public string Imagen { get; set; }
-        public DateTime FechaNacimiento { get; set; }
+        [Column(TypeName = "date")]
+        public DateTime? FechaNacimiento { get; set; }
         public int edad { get; set; }
-        public string Contrasena { get; set; }
+
+        // Opcional: si decides que BACKEND genere la contraseña, deja esto fuera.
+        public string? Contrasena { get; set; }
+
         public string Telefono { get; set; }
-        public int EstadoId { get; set; }
+
+        public int Estado { get; set; }
+
         public int RolId { get; set; }
-        public DateTime FechaCreacion { get; set; }
+        // FechaCreacion la setea el servidor
     }
 }

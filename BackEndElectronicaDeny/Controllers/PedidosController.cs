@@ -3,6 +3,7 @@ using BackEndElectronicaDeny.Models;
 using Microsoft.AspNetCore.Mvc;
 using BackEnd_ElectronicaDeny.Data;
 using Microsoft.EntityFrameworkCore;
+using BackEndElectronicaDeny.Services;
 
 namespace BackEndElectronicaDeny.Controllers
 {
@@ -77,6 +78,31 @@ namespace BackEndElectronicaDeny.Controllers
             };
             return Ok(result);
         }
+        
+        [HttpGet("total")]
+        public async Task<ActionResult<decimal>> GetTotalPedidosDelDia([FromQuery] DateTime? fecha)
+        {
+            if (fecha is null) return BadRequest("fecha requerida (yyyy-MM-dd)");
+
+            // Rango del día (local) -> convierte a UTC si FechaPedido está guardada en UTC
+            var fromLocal = fecha.Value.Date;
+            var toLocal = fromLocal.AddDays(1);
+
+            var fromUtc = DateTime.SpecifyKind(fromLocal, DateTimeKind.Local).ToUniversalTime();
+            var toUtc = DateTime.SpecifyKind(toLocal, DateTimeKind.Local).ToUniversalTime();
+
+            // Estados que SÍ cuentan como salida (recomendado)
+            int RECIBIDO = 3;
+            int INVENTARIADO = 5;
+
+            var total = await _db.Pedidos
+                .Where(p =>
+                    p.FechaPedido >= fromUtc && p.FechaPedido < toUtc &&
+                    (p.EstadoPedidoId == RECIBIDO || p.EstadoPedidoId == INVENTARIADO))
+                .SumAsync(p => (decimal?)p.TotalPedido) ?? 0m;
+
+            return Ok(total);
+        }
 
         // POST: api/pedidos
         [HttpPost]
@@ -88,7 +114,7 @@ namespace BackEndElectronicaDeny.Controllers
             {
                 NumeroPedido = dto.NumeroPedido!,
                 NombrePedido = dto.NombrePedido!,
-                FechaPedido = DateTime.UtcNow.Date,
+                FechaPedido = DateTime.UtcNow,
                 ProveedorId = dto.ProveedorId,
                 EstadoPedidoId = dto.EstadoPedidoId,
                 Descripcion = dto.Descripcion,
@@ -174,26 +200,39 @@ namespace BackEndElectronicaDeny.Controllers
             return NoContent();
         }
 
-        // POST: api/pedidos/{id}/enviar-a-inventario
-        // Cambia estado a Inventariado.
-        // (A futuro aquí puedes crear movimientos de inventario)
-        [HttpPost("{id:int}/enviar-a-inventario")]
-        public async Task<ActionResult> EnviarAInventario(int id, [FromBody] EnviarAInventarioDto body)
+        // POST: api/pedidos/{id}/mandar-a-inventario
+        [HttpPost("{id:int}/mandar-a-inventario")]
+        public async Task<ActionResult> MandarAInventario(int id, [FromServices] InventoryService inv)
         {
-            var pedido = await _db.Pedidos.Include(p => p.Detalles).FirstOrDefaultAsync(p => p.Id == id);
-            if (pedido == null) return NotFound();
+            var pedido = await _db.Pedidos
+                .Include(p => p.Detalles)
+                .FirstOrDefaultAsync(p => p.Id == id);
 
-            // Reglas: Debe estar Recibido
-            if (pedido.EstadoPedidoId != (int)EstadoPedido.Recibido)
-                return BadRequest(new { message = "El pedido debe estar en estado 'Recibido' para enviarlo a inventario." });
+            if (pedido == null) return NotFound(new { message = $"Pedido {id} no existe." });
+            if (pedido.Detalles == null || !pedido.Detalles.Any())
+                return BadRequest(new { message = "El pedido no tiene detalles." });
 
-            // TODO: crear movimientos de inventario aquí (cuando tengas el módulo)
-            // Ejemplo: foreach (var d in pedido.Detalles) { ... }
+            await using var tx = await _db.Database.BeginTransactionAsync();
+            try
+            {
+                await inv.ProcesarPedidoEnInventarioAsync(id); // upsert stock (con SaveChanges)
+                pedido.EstadoPedidoId = (int)EstadoPedido.Inventariado;
 
-            pedido.EstadoPedidoId = (int)EstadoPedido.Inventariado;
-            await _db.SaveChangesAsync();
-
-            return Ok(new { message = "Pedido enviado a Inventario.", pedidoId = pedido.Id });
+                await _db.SaveChangesAsync();
+                await tx.CommitAsync();
+                return Ok(new { ok = true, message = "Pedido inventariado. Stock actualizado.", pedidoId = pedido.Id });
+            }
+            catch (DbUpdateException ex)
+            {
+                await tx.RollbackAsync();
+                var inner = ex.InnerException?.Message ?? ex.Message;
+                return StatusCode(500, new { message = $"DB error al mandar a inventario: {inner}" });
+            }
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync();
+                return StatusCode(500, new { message = $"Error al mandar a inventario: {ex.Message}" });
+            }
         }
 
         // PUT: api/pedidos/{id}/eliminar

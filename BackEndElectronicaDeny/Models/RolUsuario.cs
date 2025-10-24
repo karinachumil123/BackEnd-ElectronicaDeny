@@ -17,5 +17,8 @@ namespace BackEnd_ElectronicaDeny.Models
 
         [JsonIgnore]
         public ICollection<Permiso> Permisos { get; set; } = new List<Permiso>();
+
+        [JsonIgnore] 
+        public ICollection<RolPermiso> RolPermisos { get; set; } = new List<RolPermiso>();
     }
 }

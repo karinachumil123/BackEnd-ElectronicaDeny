@@ -6,6 +6,8 @@ namespace BackEndElectronicaDeny.Models
 {
     // Índice único sobre NumeroPedido
     [Index(nameof(NumeroPedido), IsUnique = true)]
+    [Index(nameof(FechaPedido))]
+    [Index(nameof(EstadoPedidoId))]
     public class Pedido
     {
         [Key]

@@ -1,6 +1,7 @@
-﻿using BackEnd_ElectronicaDeny.Data;         // Ajusta si tu AppDbContext está en otro namespace
+﻿using BackEnd_ElectronicaDeny.Data;        
 using BackEndElectronicaDeny.DTOs;
 using BackEndElectronicaDeny.Models;
+using BackEndElectronicaDeny.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,11 +13,13 @@ namespace BackEndElectronicaDeny.Controllers
     {
         private readonly AppDbContext _context;
         private readonly ILogger<ProductoController> _logger;
+        private readonly InventoryService _inv;
 
-        public ProductoController(AppDbContext context, ILogger<ProductoController> logger)
+        public ProductoController(AppDbContext context, ILogger<ProductoController> logger, InventoryService inv)
         {
             _context = context;
             _logger = logger;
+            _inv = inv;
         }
 
         private static string EstadoNombre(int estadoId) =>
@@ -26,16 +29,11 @@ namespace BackEndElectronicaDeny.Controllers
         private static bool EsActivo(int estadoId) => estadoId == 1;
         private static bool EsInactivo(int estadoId) => estadoId == 2;
 
-        // =========================================
         // GET: api/Producto
-        // Por defecto: SOLO activos (EstadoId == 1)
-        // Admin puede pedir inactivos con ?incluirInactivos=true
-        // Compat: ?incluirEliminados=true se trata igual que incluirInactivos
-        // =========================================
         [HttpGet]
         public async Task<ActionResult<IEnumerable<object>>> GetProductos(
             [FromQuery] bool? incluirInactivos = null,
-            [FromQuery] bool? incluirEliminados = null  // compat: frontend viejo
+            [FromQuery] bool? incluirEliminados = null  
         )
         {
             try
@@ -167,7 +165,6 @@ namespace BackEndElectronicaDeny.Controllers
                 if (string.IsNullOrWhiteSpace(dto.Nombre))
                     return BadRequest("El nombre del producto es obligatorio.");
 
-                // Validaciones: categoría/proveedor deben estar Activos (1)
                 var categoriaActiva = await _context.Categorias
                     .AnyAsync(c => c.Id == dto.CategoriaId && c.EstadoId == 1);
                 if (!categoriaActiva)
@@ -178,7 +175,6 @@ namespace BackEndElectronicaDeny.Controllers
                 if (!proveedorActivo)
                     return BadRequest("El proveedor seleccionado no está activo y no puede usarse.");
 
-                // Normaliza EstadoId: default 1 (Activo)
                 var estadoId = (dto.EstadoId == 1 || dto.EstadoId == 2) ? dto.EstadoId : 1;
 
                 var producto = new Productos
@@ -190,12 +186,19 @@ namespace BackEndElectronicaDeny.Controllers
                     PrecioVenta = dto.PrecioVenta,
                     Descripcion = dto.Descripcion,
                     Imagen = dto.Imagen,
-                    EstadoId = estadoId,      // 1 Activo / 2 Inactivo
+                    EstadoId = estadoId,
                     CategoriaId = dto.CategoriaId,
                     ProveedorId = dto.ProveedorId
                 };
 
+                // 1) guarda el producto (necesitamos el Id)
                 _context.Productos.Add(producto);
+                await _context.SaveChangesAsync();
+
+                // 2) crea/actualiza el espejo en Stock (NO guarda por dentro)
+                await _inv.SyncStockFromProductAsync(producto.Id);
+
+                // 3) un segundo guardado para persistir el Stock creado/ajustado
                 await _context.SaveChangesAsync();
 
                 var response = new
@@ -234,7 +237,6 @@ namespace BackEndElectronicaDeny.Controllers
                 var p = await _context.Productos.FindAsync(id);
                 if (p == null) return NotFound($"No se encontró el producto con ID {id}");
 
-                // Validaciones: categoría/proveedor deben estar Activos (1)
                 var categoriaActiva = await _context.Categorias
                     .AnyAsync(c => c.Id == dto.CategoriaId && c.EstadoId == 1);
                 if (!categoriaActiva)
@@ -245,9 +247,9 @@ namespace BackEndElectronicaDeny.Controllers
                 if (!proveedorActivo)
                     return BadRequest("El proveedor seleccionado no está activo y no puede usarse.");
 
-                // Normaliza EstadoId: solo 1 o 2
                 var estadoId = (dto.EstadoId == 1 || dto.EstadoId == 2) ? dto.EstadoId : p.EstadoId;
 
+                // 1) actualizar producto
                 p.Nombre = dto.Nombre;
                 p.CodigoProducto = dto.CodigoProducto;
                 p.MarcaProducto = dto.MarcaProducto;
@@ -259,7 +261,12 @@ namespace BackEndElectronicaDeny.Controllers
                 p.CategoriaId = dto.CategoriaId;
                 p.ProveedorId = dto.ProveedorId;
 
+                // 2) espejar a Stock usando el servicio (NO guarda por dentro)
+                await _inv.SyncStockFromProductAsync(id);
+
+                // 3) un solo guardado para producto + stock
                 await _context.SaveChangesAsync();
+
                 return NoContent();
             }
             catch (DbUpdateConcurrencyException ex)
@@ -275,8 +282,6 @@ namespace BackEndElectronicaDeny.Controllers
         }
 
         // DELETE: api/Producto/5
-        // Soft delete -> EstadoId = 2 (Inactivo)
-        // Bloquea si el producto está siendo usado en DetallePedido
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteProducto(int id)
         {

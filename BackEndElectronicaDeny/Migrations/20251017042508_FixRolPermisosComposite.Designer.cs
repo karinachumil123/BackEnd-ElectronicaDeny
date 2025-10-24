@@ -3,6 +3,7 @@ using System;
 using BackEnd_ElectronicaDeny.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BackEndElectronicaDeny.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251017042508_FixRolPermisosComposite")]
+    partial class FixRolPermisosComposite
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -912,26 +915,6 @@ namespace BackEndElectronicaDeny.Migrations
                         {
                             Id = 68,
                             Nombre = "Eliminar Reportes de Inventario"
-                        },
-                        new
-                        {
-                            Id = 69,
-                            Nombre = "Ver Clientes"
-                        },
-                        new
-                        {
-                            Id = 70,
-                            Nombre = "Crear Clientes"
-                        },
-                        new
-                        {
-                            Id = 71,
-                            Nombre = "Editar Clientes"
-                        },
-                        new
-                        {
-                            Id = 72,
-                            Nombre = "Eliminar Clientes"
                         });
                 });
 
@@ -1289,26 +1272,6 @@ namespace BackEndElectronicaDeny.Migrations
                         {
                             RolId = 1,
                             PermisoId = 68
-                        },
-                        new
-                        {
-                            RolId = 1,
-                            PermisoId = 69
-                        },
-                        new
-                        {
-                            RolId = 1,
-                            PermisoId = 70
-                        },
-                        new
-                        {
-                            RolId = 1,
-                            PermisoId = 71
-                        },
-                        new
-                        {
-                            RolId = 1,
-                            PermisoId = 72
                         });
                 });
 

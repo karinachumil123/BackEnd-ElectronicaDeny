@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BackEndElectronicaDeny.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250921231454_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251017034845_MakeRolPermisoIdIdentity")]
+    partial class MakeRolPermisoIdIdentity
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,163 @@ namespace BackEndElectronicaDeny.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("BackEndElectronicaDeny.Models.AperturaCaja", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CajeroNombre")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<DateTime>("FechaAperturaUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
+
+                    b.Property<decimal>("MontoApertura")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Notas")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UsuarioId");
+
+                    b.ToTable("AperturasCaja", (string)null);
+                });
+
+            modelBuilder.Entity("BackEndElectronicaDeny.Models.CierreCaja", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AperturaCajaId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("BaseCaja")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("CajeroNombre")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<DateTime>("FechaCierreUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
+
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AperturaCajaId");
+
+                    b.HasIndex("UsuarioId");
+
+                    b.ToTable("CierresCaja", (string)null);
+                });
+
+            modelBuilder.Entity("BackEndElectronicaDeny.Models.ClasificacionCaja", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Cantidad")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CierreCajaId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Denominacion")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<decimal>("Subtotal")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("Valor")
+                        .HasColumnType("numeric");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CierreCajaId");
+
+                    b.ToTable("ClasificacionesCaja", (string)null);
+                });
+
+            modelBuilder.Entity("BackEndElectronicaDeny.Models.Clientes", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Correo")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("Departamento")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("Direccion")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("Estado")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("FechaRegistro")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
+
+                    b.Property<string>("Municipio")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("NIT")
+                        .HasMaxLength(14)
+                        .HasColumnType("character varying(14)");
+
+                    b.Property<string>("NombreCompleto")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Telefono")
+                        .IsRequired()
+                        .HasMaxLength(25)
+                        .HasColumnType("character varying(25)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Telefono")
+                        .IsUnique();
+
+                    b.ToTable("Clientes");
+                });
 
             modelBuilder.Entity("BackEndElectronicaDeny.Models.DetallePedido", b =>
                 {
@@ -57,6 +214,38 @@ namespace BackEndElectronicaDeny.Migrations
                     b.HasIndex("ProductosId");
 
                     b.ToTable("DetallePedidos");
+                });
+
+            modelBuilder.Entity("BackEndElectronicaDeny.Models.DetalleVenta", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Cantidad")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("PrecioUnitario")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("ProductoId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Subtotal")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("VentaId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductoId");
+
+                    b.HasIndex("VentaId");
+
+                    b.ToTable("DetalleVenta");
                 });
 
             modelBuilder.Entity("BackEndElectronicaDeny.Models.Empresa", b =>
@@ -137,6 +326,10 @@ namespace BackEndElectronicaDeny.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("EstadoPedidoId");
+
+                    b.HasIndex("FechaPedido");
+
                     b.HasIndex("NumeroPedido")
                         .IsUnique();
 
@@ -178,10 +371,10 @@ namespace BackEndElectronicaDeny.Migrations
                         .HasColumnType("text");
 
                     b.Property<decimal>("PrecioAdquisicion")
-                        .HasColumnType("numeric");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("PrecioVenta")
-                        .HasColumnType("numeric");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("ProveedorId")
                         .HasColumnType("integer");
@@ -235,7 +428,7 @@ namespace BackEndElectronicaDeny.Migrations
                     b.ToTable("Proveedores");
                 });
 
-            modelBuilder.Entity("BackEnd_ElectronicaDeny.Models.Estados", b =>
+            modelBuilder.Entity("BackEndElectronicaDeny.Models.SaldosCaja", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -243,30 +436,122 @@ namespace BackEndElectronicaDeny.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Nombre")
-                        .IsRequired()
+                    b.Property<decimal>("AperturaCaja")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("CierreCajaId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Descripcion")
                         .HasColumnType("text");
+
+                    b.Property<decimal>("Entradas")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("Salidas")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("Subtotal")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("Total")
+                        .HasColumnType("numeric");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Estados");
+                    b.HasIndex("CierreCajaId")
+                        .IsUnique();
 
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Nombre = "Activo"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Nombre = "Inactivo"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Nombre = "Eliminado"
-                        });
+                    b.ToTable("SaldosCaja", (string)null);
+                });
+
+            modelBuilder.Entity("BackEndElectronicaDeny.Models.Stock", b =>
+                {
+                    b.Property<int>("ProductoId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Imagen")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("NombreCategoria")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<decimal>("PrecioCompra")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PrecioVenta")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("StockDisponible")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("StockMinimo")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ProductoId");
+
+                    b.ToTable("Stocks", (string)null);
+                });
+
+            modelBuilder.Entity("BackEndElectronicaDeny.Models.Venta", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Cambio")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("ClienteDireccion")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int?>("ClienteId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ClienteNombre")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("ClienteTelefono")
+                        .HasMaxLength(25)
+                        .HasColumnType("character varying(25)");
+
+                    b.Property<int?>("ClientesId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("FechaVenta")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("MontoRecibido")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("Observaciones")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("Subtotal")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("Total")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("VendedorId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClienteId");
+
+                    b.HasIndex("ClientesId");
+
+                    b.HasIndex("VendedorId");
+
+                    b.ToTable("Ventas");
                 });
 
             modelBuilder.Entity("BackEnd_ElectronicaDeny.Models.Permiso", b =>
@@ -635,429 +920,435 @@ namespace BackEndElectronicaDeny.Migrations
 
             modelBuilder.Entity("BackEnd_ElectronicaDeny.Models.RolPermiso", b =>
                 {
-                    b.Property<int>("RolId")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("PermisoId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Id")
+                    b.Property<int>("RolId")
                         .HasColumnType("integer");
 
-                    b.HasKey("RolId", "PermisoId");
+                    b.HasKey("Id");
 
                     b.HasIndex("PermisoId");
 
-                    b.ToTable("RolPermisos");
+                    b.HasIndex("RolId", "PermisoId")
+                        .IsUnique();
+
+                    b.ToTable("RolPermisos", (string)null);
 
                     b.HasData(
                         new
                         {
-                            RolId = 1,
+                            Id = 1,
                             PermisoId = 1,
-                            Id = 1
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 2,
                             PermisoId = 2,
-                            Id = 2
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 3,
                             PermisoId = 3,
-                            Id = 3
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 4,
                             PermisoId = 4,
-                            Id = 4
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 5,
                             PermisoId = 5,
-                            Id = 5
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 6,
                             PermisoId = 6,
-                            Id = 6
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 7,
                             PermisoId = 7,
-                            Id = 7
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 8,
                             PermisoId = 8,
-                            Id = 8
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 9,
                             PermisoId = 9,
-                            Id = 9
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 10,
                             PermisoId = 10,
-                            Id = 10
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 11,
                             PermisoId = 11,
-                            Id = 11
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 12,
                             PermisoId = 12,
-                            Id = 12
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 13,
                             PermisoId = 13,
-                            Id = 13
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 14,
                             PermisoId = 14,
-                            Id = 14
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 15,
                             PermisoId = 15,
-                            Id = 15
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 16,
                             PermisoId = 16,
-                            Id = 16
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 17,
                             PermisoId = 17,
-                            Id = 17
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 18,
                             PermisoId = 18,
-                            Id = 18
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 19,
                             PermisoId = 19,
-                            Id = 19
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 20,
                             PermisoId = 20,
-                            Id = 20
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 21,
                             PermisoId = 21,
-                            Id = 21
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 22,
                             PermisoId = 22,
-                            Id = 22
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 23,
                             PermisoId = 23,
-                            Id = 23
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 24,
                             PermisoId = 24,
-                            Id = 24
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 25,
                             PermisoId = 25,
-                            Id = 25
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 26,
                             PermisoId = 26,
-                            Id = 26
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 27,
                             PermisoId = 27,
-                            Id = 27
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 28,
                             PermisoId = 28,
-                            Id = 28
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 29,
                             PermisoId = 29,
-                            Id = 29
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 30,
                             PermisoId = 30,
-                            Id = 30
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 31,
                             PermisoId = 31,
-                            Id = 31
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 32,
                             PermisoId = 32,
-                            Id = 32
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 33,
                             PermisoId = 33,
-                            Id = 33
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 34,
                             PermisoId = 34,
-                            Id = 34
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 35,
                             PermisoId = 35,
-                            Id = 35
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 36,
                             PermisoId = 36,
-                            Id = 36
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 37,
                             PermisoId = 37,
-                            Id = 37
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 38,
                             PermisoId = 38,
-                            Id = 38
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 39,
                             PermisoId = 39,
-                            Id = 39
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 40,
                             PermisoId = 40,
-                            Id = 40
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 41,
                             PermisoId = 41,
-                            Id = 41
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 42,
                             PermisoId = 42,
-                            Id = 42
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 43,
                             PermisoId = 43,
-                            Id = 43
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 44,
                             PermisoId = 44,
-                            Id = 44
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 45,
                             PermisoId = 45,
-                            Id = 45
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 46,
                             PermisoId = 46,
-                            Id = 46
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 47,
                             PermisoId = 47,
-                            Id = 47
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 48,
                             PermisoId = 48,
-                            Id = 48
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 49,
                             PermisoId = 49,
-                            Id = 49
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 50,
                             PermisoId = 50,
-                            Id = 50
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 51,
                             PermisoId = 51,
-                            Id = 51
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 52,
                             PermisoId = 52,
-                            Id = 52
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 53,
                             PermisoId = 53,
-                            Id = 53
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 54,
                             PermisoId = 54,
-                            Id = 54
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 55,
                             PermisoId = 55,
-                            Id = 55
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 56,
                             PermisoId = 56,
-                            Id = 56
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 57,
                             PermisoId = 57,
-                            Id = 57
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 58,
                             PermisoId = 58,
-                            Id = 58
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 59,
                             PermisoId = 59,
-                            Id = 59
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 60,
                             PermisoId = 60,
-                            Id = 60
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 61,
                             PermisoId = 61,
-                            Id = 61
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 62,
                             PermisoId = 62,
-                            Id = 62
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 63,
                             PermisoId = 63,
-                            Id = 63
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 64,
                             PermisoId = 64,
-                            Id = 64
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 65,
                             PermisoId = 65,
-                            Id = 65
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 66,
                             PermisoId = 66,
-                            Id = 66
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 67,
                             PermisoId = 67,
-                            Id = 67
+                            RolId = 1
                         },
                         new
                         {
-                            RolId = 1,
+                            Id = 68,
                             PermisoId = 68,
-                            Id = 68
+                            RolId = 1
                         });
                 });
 
@@ -1100,20 +1391,23 @@ namespace BackEndElectronicaDeny.Migrations
 
                     b.Property<string>("Apellido")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("CodigoRecuperacion")
                         .HasColumnType("text");
 
                     b.Property<string>("Contrasena")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
 
                     b.Property<string>("Correo")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
 
-                    b.Property<int>("EstadoId")
+                    b.Property<int>("Estado")
                         .HasColumnType("integer");
 
                     b.Property<DateTime?>("FechaCreacion")
@@ -1123,21 +1417,23 @@ namespace BackEndElectronicaDeny.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("FechaNacimiento")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("date");
 
                     b.Property<string>("Imagen")
                         .HasColumnType("text");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<int>("RolId")
                         .HasColumnType("integer");
 
                     b.Property<string>("Telefono")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)");
 
                     b.Property<DateTime?>("UltimoInicioSesion")
                         .HasColumnType("timestamp with time zone");
@@ -1147,7 +1443,8 @@ namespace BackEndElectronicaDeny.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("EstadoId");
+                    b.HasIndex("Correo")
+                        .IsUnique();
 
                     b.HasIndex("RolId");
 
@@ -1160,7 +1457,7 @@ namespace BackEndElectronicaDeny.Migrations
                             Apellido = "Xoquic",
                             Contrasena = "@Admin2025",
                             Correo = "electronicadeny@gmail.com",
-                            EstadoId = 1,
+                            Estado = 1,
                             Nombre = "Deny",
                             RolId = 1,
                             Telefono = "5881 6213",
@@ -1193,6 +1490,45 @@ namespace BackEndElectronicaDeny.Migrations
                     b.ToTable("Categorias");
                 });
 
+            modelBuilder.Entity("BackEndElectronicaDeny.Models.AperturaCaja", b =>
+                {
+                    b.HasOne("BackEnd_ElectronicaDeny.Models.Usuario", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Usuario");
+                });
+
+            modelBuilder.Entity("BackEndElectronicaDeny.Models.CierreCaja", b =>
+                {
+                    b.HasOne("BackEndElectronicaDeny.Models.AperturaCaja", "AperturaCaja")
+                        .WithMany()
+                        .HasForeignKey("AperturaCajaId");
+
+                    b.HasOne("BackEnd_ElectronicaDeny.Models.Usuario", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AperturaCaja");
+
+                    b.Navigation("Usuario");
+                });
+
+            modelBuilder.Entity("BackEndElectronicaDeny.Models.ClasificacionCaja", b =>
+                {
+                    b.HasOne("BackEndElectronicaDeny.Models.CierreCaja", "CierreCaja")
+                        .WithMany("Clasificaciones")
+                        .HasForeignKey("CierreCajaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CierreCaja");
+                });
+
             modelBuilder.Entity("BackEndElectronicaDeny.Models.DetallePedido", b =>
                 {
                     b.HasOne("BackEndElectronicaDeny.Models.Pedido", "Pedido")
@@ -1214,6 +1550,25 @@ namespace BackEndElectronicaDeny.Migrations
                     b.Navigation("Pedido");
 
                     b.Navigation("Producto");
+                });
+
+            modelBuilder.Entity("BackEndElectronicaDeny.Models.DetalleVenta", b =>
+                {
+                    b.HasOne("BackEndElectronicaDeny.Models.Productos", "Producto")
+                        .WithMany()
+                        .HasForeignKey("ProductoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BackEndElectronicaDeny.Models.Venta", "Venta")
+                        .WithMany("DetallesVenta")
+                        .HasForeignKey("VentaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Producto");
+
+                    b.Navigation("Venta");
                 });
 
             modelBuilder.Entity("BackEndElectronicaDeny.Models.Pedido", b =>
@@ -1246,6 +1601,50 @@ namespace BackEndElectronicaDeny.Migrations
                     b.Navigation("Proveedor");
                 });
 
+            modelBuilder.Entity("BackEndElectronicaDeny.Models.SaldosCaja", b =>
+                {
+                    b.HasOne("BackEndElectronicaDeny.Models.CierreCaja", "CierreCaja")
+                        .WithOne("Saldos")
+                        .HasForeignKey("BackEndElectronicaDeny.Models.SaldosCaja", "CierreCajaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CierreCaja");
+                });
+
+            modelBuilder.Entity("BackEndElectronicaDeny.Models.Stock", b =>
+                {
+                    b.HasOne("BackEndElectronicaDeny.Models.Productos", "Producto")
+                        .WithOne("Stock")
+                        .HasForeignKey("BackEndElectronicaDeny.Models.Stock", "ProductoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Producto");
+                });
+
+            modelBuilder.Entity("BackEndElectronicaDeny.Models.Venta", b =>
+                {
+                    b.HasOne("BackEndElectronicaDeny.Models.Clientes", "Cliente")
+                        .WithMany()
+                        .HasForeignKey("ClienteId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BackEndElectronicaDeny.Models.Clientes", null)
+                        .WithMany("Ventas")
+                        .HasForeignKey("ClientesId");
+
+                    b.HasOne("BackEnd_ElectronicaDeny.Models.Usuario", "Vendedor")
+                        .WithMany()
+                        .HasForeignKey("VendedorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Cliente");
+
+                    b.Navigation("Vendedor");
+                });
+
             modelBuilder.Entity("BackEnd_ElectronicaDeny.Models.Permiso", b =>
                 {
                     b.HasOne("BackEnd_ElectronicaDeny.Models.RolUsuario", null)
@@ -1256,13 +1655,13 @@ namespace BackEndElectronicaDeny.Migrations
             modelBuilder.Entity("BackEnd_ElectronicaDeny.Models.RolPermiso", b =>
                 {
                     b.HasOne("BackEnd_ElectronicaDeny.Models.Permiso", "Permiso")
-                        .WithMany()
+                        .WithMany("RolPermisos")
                         .HasForeignKey("PermisoId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("BackEnd_ElectronicaDeny.Models.RolUsuario", "Rol")
-                        .WithMany()
+                        .WithMany("RolPermisos")
                         .HasForeignKey("RolId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1274,21 +1673,26 @@ namespace BackEndElectronicaDeny.Migrations
 
             modelBuilder.Entity("BackEnd_ElectronicaDeny.Models.Usuario", b =>
                 {
-                    b.HasOne("BackEnd_ElectronicaDeny.Models.Estados", "Estado")
-                        .WithMany("Usuarios")
-                        .HasForeignKey("EstadoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("BackEnd_ElectronicaDeny.Models.RolUsuario", "Rol")
                         .WithMany("Usuarios")
                         .HasForeignKey("RolId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Estado");
-
                     b.Navigation("Rol");
+                });
+
+            modelBuilder.Entity("BackEndElectronicaDeny.Models.CierreCaja", b =>
+                {
+                    b.Navigation("Clasificaciones");
+
+                    b.Navigation("Saldos")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BackEndElectronicaDeny.Models.Clientes", b =>
+                {
+                    b.Navigation("Ventas");
                 });
 
             modelBuilder.Entity("BackEndElectronicaDeny.Models.Pedido", b =>
@@ -1299,6 +1703,8 @@ namespace BackEndElectronicaDeny.Migrations
             modelBuilder.Entity("BackEndElectronicaDeny.Models.Productos", b =>
                 {
                     b.Navigation("DetallePedidos");
+
+                    b.Navigation("Stock");
                 });
 
             modelBuilder.Entity("BackEndElectronicaDeny.Models.Proveedor", b =>
@@ -1306,14 +1712,21 @@ namespace BackEndElectronicaDeny.Migrations
                     b.Navigation("Productos");
                 });
 
-            modelBuilder.Entity("BackEnd_ElectronicaDeny.Models.Estados", b =>
+            modelBuilder.Entity("BackEndElectronicaDeny.Models.Venta", b =>
                 {
-                    b.Navigation("Usuarios");
+                    b.Navigation("DetallesVenta");
+                });
+
+            modelBuilder.Entity("BackEnd_ElectronicaDeny.Models.Permiso", b =>
+                {
+                    b.Navigation("RolPermisos");
                 });
 
             modelBuilder.Entity("BackEnd_ElectronicaDeny.Models.RolUsuario", b =>
                 {
                     b.Navigation("Permisos");
+
+                    b.Navigation("RolPermisos");
 
                     b.Navigation("Usuarios");
                 });
